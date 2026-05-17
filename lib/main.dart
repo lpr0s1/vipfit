@@ -213,7 +213,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                       child: GridView.count(
                         crossAxisCount: 2,
                         shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(), // Empêche les conflits de scroll avec SingleChildScrollView
+                        physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                         childAspectRatio: 1.6,
@@ -483,7 +483,6 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sécurité anti division par zéro (même si bloqué à 120cm min dans l'UI)
     final safeHeight = height > 0 ? height : 1.0;
     final double bmi = weight / ((safeHeight / 100) * (safeHeight / 100));
 
@@ -561,15 +560,15 @@ class DashboardPage extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Row(
-                      children: [
+                      children: const [
                         Icon(Icons.add_moderator_rounded, color: Color(0xFF00FF66), size: 28),
                         SizedBox(width: 16),
                         Text("Enregistrer mes data du jour", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                       ],
                     ),
-                    Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
+                    const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
                   ],
                 ),
               ),
