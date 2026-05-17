@@ -13,7 +13,6 @@ workflows:
         script: |
           echo "Génération des dossiers natifs iOS..."
           if [ ! -d "ios" ]; then
-            # Génération propre avec le nom vipfit
             flutter create . --project-name vipfit --org com.hx --platforms ios
           else
             echo "Dossier iOS déjà présent."
@@ -23,27 +22,22 @@ workflows:
         script: |
           flutter pub get
 
-      - name: 3. Compiler la version iOS (Sans signature)
+      - name: 3. Compiler la version iOS (Forçage sans signature)
         script: |
-          echo "Compilation en cours... (Mode sans signature Apple)"
-          flutter build ios --release --no-codesign
+          echo "Compilation en cours..."
+          # On injecte les arguments Xcode pour détruire les exigences de Provisioning Profile
+          flutter build ios --release --no-codesign --build-number=1 --build-name=1.0.0 \
+            --to-binary-arguments="CODE_SIGNING_ALLOWED=NO" \
+            --extra-front-end-options="--no-implicit-dynamic-reexport"
 
       - name: 4. Créer le fichier .ipa pour Sideloadly
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
-          
-          # Positionnement dans le dossier de build de Flutter
           cd build/ios/iphoneos
-          
-          # Structure requise pour l'installation iOS
           mkdir -p Payload
           cp -r Runner.app Payload/
-          
-          # Compression au format .ipa pour Sideloadly
           zip -r -q vipfit.ipa Payload
-          
-          # Envoi vers le dossier d'artefacts Codemagic
           mv vipfit.ipa ../ipa/
 
     artifacts:
