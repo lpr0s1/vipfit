@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   runApp(const VipFitApp());
@@ -143,7 +142,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                         },
                         onTextChanged: (val) {
                           if (val.isEmpty) return;
-                          final parsed = double.tryParse(val);
+                          final parsed = double.tryParse(val.replaceAll(RegExp(r'[^0-9.]'), ''));
                           if (parsed != null) {
                             setState(() {
                               age = parsed.toInt().clamp(14, 99);
@@ -172,7 +171,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                         },
                         onTextChanged: (val) {
                           if (val.isEmpty) return;
-                          final parsed = double.tryParse(val);
+                          final parsed = double.tryParse(val.replaceAll(RegExp(r'[^0-9.]'), ''));
                           if (parsed != null) {
                             setState(() {
                               weight = parsed.clamp(40.0, 180.0);
@@ -200,7 +199,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                         },
                         onTextChanged: (val) {
                           if (val.isEmpty) return;
-                          final parsed = double.tryParse(val);
+                          final parsed = double.tryParse(val.replaceAll(RegExp(r'[^0-9.]'), ''));
                           if (parsed != null) {
                             setState(() {
                               height = parsed.roundToDouble().clamp(120.0, 230.0);
@@ -340,9 +339,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.numberWithOptions(decimal: isDecimal),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                  ],
                   onChanged: onTextChanged,
                   textAlign: TextAlign.right,
                   style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Color(0xFF00FF66), letterSpacing: -1),
