@@ -27,34 +27,42 @@ workflows:
             dart run flutter_launcher_icons
           fi
 
-      - name: 2.8 Patcher la configuration Xcode (Contournement Signature)
+      - name: 3. Préparer les fichiers Flutter pour Xcode
         script: |
-          echo "Désactivation des exigences de signature dans le projet Xcode..."
-          PBXPROJ_PATH="ios/Runner.xcodeproj/project.pbxproj"
-          if [ -f "$PBXPROJ_PATH" ]; then
-            # Force la désactivation du code signing requis et supprime l'obligation d'une Team ID
-            sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' "$PBXPROJ_PATH"
-            sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = "AUTOMATIC";/g' "$PBXPROJ_PATH"
-            echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
-          else
-            echo "Fichier pbxproj introuvable, tentative via xcconfig..."
-            echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
-          fi
+          echo "Génération des fichiers de configuration Flutter..."
+          flutter build ios --config-only --release
 
-      - name: 3. Compiler la version iOS (Vrai appareil - Sans signature)
+      - name: 3.5 Compiler avec xcodebuild (Force l'impasse sur la Team)
         script: |
-          echo "Compilation de la version Release..."
-          flutter build ios --release --no-codesign --build-name=1.0.0 --build-number=1
+          echo "Compilation brute via Xcode sans aucune signature..."
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            clean build
 
       - name: 4. Créer le fichier .ipa pour Sideloadly
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
-          cd build/ios/iphoneos
+          
+          # On cible le dossier de sortie généré par xcodebuild
+          cd ios/build/Release-iphoneos
+          
           mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r -q vipfit.ipa Payload
-          mv vipfit.ipa ../ipa/
+          
+          # On déplace l'IPA là où Codemagic cherche les artefacts
+          mkdir -p ../../../build/ios/ipa
+          mv vipfit.ipa ../../../build/ios/ipa/
 
     artifacts:
       - build/ios/ipa/*.ipa
