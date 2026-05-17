@@ -3,11 +3,9 @@ workflows:
     name: vipfit
     instance_type: mac_mini_m2
     max_build_duration: 60
-
     environment:
       flutter: stable
       xcode: latest
-
     scripts:
       - name: 1. Initialiser l'arborescence iOS
         script: |
@@ -17,36 +15,33 @@ workflows:
           else
             echo "Dossier iOS déjà présent."
           fi
-
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-
-      - name: 3. Compiler la version iOS (Forçage sans signature)
+            - name: 1.5 Générer automatiquement l'icône de l'application
         script: |
-          echo "Compilation en cours..."
-          # On injecte les arguments Xcode pour détruire les exigences de Provisioning Profile
-          flutter build ios --release --no-codesign --build-number=1 --build-name=1.0.0 \
-            --to-binary-arguments="CODE_SIGNING_ALLOWED=NO" \
-            --extra-front-end-options="--no-implicit-dynamic-reexport"
-
-      - name: 4. Créer le fichier .ipa pour Sideloadly
+          if [ -f "assets/app_icon.png" ]; then
+            flutter pub get
+            dart run flutter_launcher_icons
+          fi
+      - name: 3. Compiler la version iOS (Sans signature)
+        script: |
+          echo "Compilation en cours... (Mode sans signature Apple)"
+          flutter build ios --release --no-codesign
+      - name: 4. Créer le fichier .ipa
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r -q vipfit.ipa Payload
-          mv vipfit.ipa ../ipa/
-
+          mv Runner.app Payload/
+          zip -r -q ../ipa/vipfit.ipa Payload
     artifacts:
       - build/ios/ipa/*.ipa
-
     publishing:
       email:
         recipients:
-          - test@example.com
+          - test@example.com # Codemagic remplacera par votre email de compte
         notify:
           success: true
           failure: true
