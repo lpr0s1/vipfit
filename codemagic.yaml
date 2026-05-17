@@ -1,5 +1,4 @@
-workflows:
-  ios-unsigned-ipa:
+ios-unsigned-ipa:
     name: vipfit
     instance_type: mac_mini_m2
     max_build_duration: 60
@@ -29,33 +28,16 @@ workflows:
             dart run flutter_launcher_icons
           fi
 
-      - name: 3. Compiler la version iOS (Bypass total via Xcodebuild)
+      - name: 3. Compiler la version iOS (Sans signature)
         script: |
-          echo "Préparation du projet par Flutter..."
-          # On demande à Flutter de préparer les fichiers et Cocoapods sans lancer la compilation
-          flutter build ios --config-only
-
-          echo "Compilation native forcée avec xcodebuild..."
-          cd ios
-          # On utilise directement le compilateur d'Apple en lui forçant les paramètres
-          xcodebuild build \
-            -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            SYMROOT="$(PWD)/../build/ios" \
-            CODE_SIGNING_ALLOWED="NO" \
-            CODE_SIGNING_REQUIRED="NO" \
-            CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM=""
+          echo "Compilation en cours... (Mode sans signature Apple)"
+          flutter build ios --release --no-codesign
 
       - name: 4. Créer le fichier .ipa
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
-          # Attention : le chemin de sortie natif est Release-iphoneos
-          cd build/ios/Release-iphoneos
+          cd build/ios/iphoneos
           mkdir -p Payload
           mv Runner.app Payload/
           zip -r -q ../ipa/vipfit.ipa Payload
