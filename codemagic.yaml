@@ -11,50 +11,48 @@ workflows:
     scripts:
       - name: 1. Initialiser l'arborescence iOS
         script: |
-          echo "Génération des dossiers natifs iOS..."
-          if [ ! -d "ios" ]; then
-            flutter create . --project-name vipfit --org com.hx --platforms ios
-          else
-            echo "Dossier iOS déjà présent."
-          fi
+          echo "Génération du projet iOS natif..."
+          flutter create . --project-name vipfit --org com.hx --platforms ios
 
-      - name: 2. Télécharger les dépendances
+      - name: 2. Télécharger les dépendances et générer l'icône
         script: |
           flutter pub get
-
-      - name: 3. Générer l'icône de l'application
-        script: |
           if [ -f "assets/app_icon.png" ]; then
             dart run flutter_launcher_icons
-          else
-            echo "Pas d'icône trouvée, étape ignorée."
           fi
 
-      - name: 4. Compiler la version iOS (Forçage Xcode strict)
+      - name: 3. Préparer le projet Flutter pour Xcode
         script: |
-          echo "Lancement du build avec contournement des signatures Xcode..."
-          
-          # On nettoie le build pour repartir sur du propre
-          flutter clean
-          flutter pub get
-          
-          # La vraie astuce : On passe les arguments de build DIRECTEMENT à xcodebuild via --build-name/number
-          # et en forçant l'identité de signature à vide au niveau de Flutter.
-          flutter build ios --release --no-codesign \
-            --extra-front-end-options="--no-implicit-dynamic-reexport" \
-            --split-debug-info=build/app/outputs/symbols
-            
-      - name: 5. Forcer la création de l'IPA sans signature (Méthode Manuelle)
+          echo "Génération des fichiers de configuration Flutter..."
+          # Cette commande prépare le terrain sans lancer la compilation stricte de Flutter
+          flutter build ios --config-only --release
+
+      - name: 4. Compilation forcée via Xcode (Contournement total)
         script: |
-          echo "Empaquetage manuel du Payload pour Sideloadly..."
+          echo "Lancement du build direct via xcodebuild sans signature..."
+          cd ios
+          
+          # On compile le projet en direct en écrasant TOUTES les exigences d'Apple au niveau de la ligne de commande
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_METHOD=manual \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: 5. Créer le fichier .ipa pour Sideloadly
+        script: |
+          echo "Création du package IPA..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           
-          # Création du dossier Payload requis par iOS pour les fichiers .ipa
           mkdir -p Payload
           cp -r Runner.app Payload/
-          
-          # On crée l'archive zip finale et on la renomme en .ipa
           zip -r -q vipfit.ipa Payload
           mv vipfit.ipa ../ipa/
 
