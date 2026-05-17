@@ -233,7 +233,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
 }
 
 /// --- INTERFACE PRINCIPALE ---
-class VipFitHome block extends StatefulWidget {
+class VipFitHome extends StatefulWidget {
   const VipFitHome({super.key});
 
   @override
