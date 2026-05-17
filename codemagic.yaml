@@ -11,14 +11,18 @@ workflows:
     scripts:
       - name: 1. Initialiser l'arborescence iOS (Sécurisé)
         script: |
-          echo "Sauvegarde de ton pubspec.yaml personnalisé..."
-          cp pubspec.yaml pubspec.yaml.bak
+          echo "Sauvegarde de ton code..."
+          mkdir -p temp_src
+          cp -r lib pubspec.yaml temp_src/ 2>/dev/null || cp pubspec.yaml temp_src/
 
-          echo "Génération du projet iOS natif..."
+          echo "Génération complète du projet..."
           flutter create . --project-name vipfit --org com.hx --platforms ios
 
-          echo "Restauration de ton pubspec.yaml personnalisé..."
-          mv pubspec.yaml.bak pubspec.yaml
+          echo "Restauration de ton code personnalisé..."
+          cp -r temp_src/pubspec.yaml ./
+          if [ -d "temp_src/lib" ]; then
+            cp -r temp_src/lib/ ./lib/
+          fi
 
       - name: 2. Télécharger les dépendances et générer l'icône
         script: |
