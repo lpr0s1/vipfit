@@ -22,25 +22,50 @@ workflows:
         script: |
           flutter pub get
 
-      - name: 2.5 Générer l'icône de l'application (si le fichier existe)
+      - name: 2.5 Générer l'icône de l'application
         script: |
           if [ -f "assets/app_icon.png" ]; then
             dart run flutter_launcher_icons
           else
-            echo "Attention : assets/app_icon.png introuvable, création d'une icône par défaut."
+            echo "Pas d'icône trouvée, étape ignorée."
           fi
 
-      - name: 3. Préparer le projet et compiler sans signature
+      - name: 3. Forcer Xcode à ignorer la Development Team et la Signature
         script: |
-          echo "Désactivation stricte de la signature via xcconfig..."
-          mkdir -p ios/Flutter
-          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
+          echo "Modification chirurgicale du fichier projet Xcode..."
+          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
           
-          echo "Lancement de la compilation Flutter..."
+          if [ -f "$PBXPROJ" ]; then
+            # 1. On supprime les lignes CODE_SIGN_IDENTITY existantes pour éviter les conflits
+            sed -i '' '/CODE_SIGN_IDENTITY/d' "$PBXPROJ"
+            
+            # 2. On désactive le "Automatic Signing" qui force la recherche d'une Team
+            sed -i '' 's/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g' "$PBXPROJ"
+            
+            # 3. On injecte l'absence de Team et d'identité de signature dans toutes les configurations de build
+            sed -i '' 's/DevelopmentTeam = .*/DevelopmentTeam = "";/g' "$PBXPROJ"
+            
+            # 4. On s'assure que le dictionnaire TargetAttributes n'exige pas de Team
+            sed -i '' '/DevelopmentTeam = /d' "$PBXPROJ"
+            
+            echo "Injection des flags de contournement globaux dans Release.xcconfig..."
+            mkdir -p ios/Flutter
+            echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
+            echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
+            echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
+            echo "PROVISIONING_PROFILE_SPECIFIER=" >> ios/Flutter/Release.xcconfig
+            echo "DEVELOPMENT_TEAM=" >> ios/Flutter/Release.xcconfig
+          else
+            echo "Erreur : Fichier Xcode introuvable !"
+            exit 1
+          fi
+
+      - name: 4. Compiler la version iOS (Sans signature)
+        script: |
+          echo "Compilation en cours..."
           flutter build ios --release --no-codesign --build-number=1 --build-name=1.0.0
 
-      - name: 4. Créer le fichier .ipa pour Sideloadly
+      - name: 5. Créer le fichier .ipa pour Sideloadly
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
