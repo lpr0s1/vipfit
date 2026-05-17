@@ -7,9 +7,9 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
-      - name: 1. Générer l'arborescence iOS de zéro
+      - name: 1. Générer l'arborescence iOS de zero
         script: |
-          echo "Dossier iOS absent. Génération complète..."
+          echo "Dossier iOS absent. Generation complete..."
           flutter create . --project-name vipfit --org com.hx --platforms ios
           
           # Petite pause pour être sûr que la machine virtuelle a fini d'écrire les fichiers
@@ -33,13 +33,13 @@ workflows:
             sed -i '' 's/CODE_SIGN_IDENTITY = .*/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
             sed -i '' 's/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = .*/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' "$PBXPROJ"
             
-            echo "Le projet Xcode a été neutralisé avec succès."
+            echo "Le projet Xcode a ete neutraliser avec succes."
           else
             echo "ERREUR CRITIQUE : Le dossier ios ou le projet n'a pas été créé par Flutter."
             exit 1
           fi
 
-          # Suppression d'éventuels droits bloquants
+          # Suppression d eventuels droits bloquants
           rm -f ios/Runner/Runner.entitlements 2>/dev/null || true
 
       - name: 3. Télécharger les dépendances
@@ -59,7 +59,7 @@ workflows:
 
       - name: 5. Créer l'IPA pour Sideloadly
         script: |
-          echo "Création du Payload..."
+          echo "Creation du Payload..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           
