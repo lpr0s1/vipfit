@@ -560,7 +560,7 @@ class DashboardPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
-                      children: const [
+                      children: const [ // <-- LE FIX EST ICI : Plus de const global sur la ligne
                         Icon(Icons.add_moderator_rounded, color: Color(0xFF00FF66), size: 28),
                         SizedBox(width: 16),
                         Text("Enregistrer mes data du jour", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
