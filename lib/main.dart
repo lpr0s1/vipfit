@@ -27,7 +27,6 @@ class VipFitApp extends StatelessWidget {
   }
 }
 
-/// --- MODULE ONBOARDING PREMIUM ---
 class OnboardingWizard extends StatefulWidget {
   const OnboardingWizard({super.key});
 
@@ -383,7 +382,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
   }
 }
 
-/// --- INTERFACE PRINCIPALE ---
 class VipFitHome extends StatefulWidget {
   final String sex;
   final int age;
@@ -468,7 +466,6 @@ class _VipFitHomeState extends State<VipFitHome> {
   }
 }
 
-/// --- TABLEAU DE BORD ---
 class DashboardPage extends StatelessWidget {
   final double weight;
   final double height;
@@ -650,7 +647,6 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-/// --- PROGRAMME DE LA SEMAINE ---
 class WeeklyProgramPage extends StatelessWidget {
   final double weight;
   final double height;
@@ -735,7 +731,6 @@ class WeeklyProgramPage extends StatelessWidget {
   }
 }
 
-/// --- VRAIE VIEW: SÉANCES D'ENTRAÎNEMENT ---
 class WorkoutsPage extends StatelessWidget {
   const WorkoutsPage({super.key});
 
@@ -802,7 +797,6 @@ class WorkoutsPage extends StatelessWidget {
   }
 }
 
-/// --- VRAIE VIEW: PROFIL UTILISATEUR & MODIFICATION ---
 class ProfilePage extends StatelessWidget {
   final int age;
   final double weight;
@@ -833,9 +827,9 @@ class ProfilePage extends StatelessWidget {
                   Container(
                     width: 90,
                     height: 90,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(colors: [Color(0xFF00FF66), Color(0xFF00E5FF)]),
+                      gradient: LinearGradient(colors: [Color(0xFF00FF66), Color(0xFF00E5FF)]),
                     ),
                     child: const Icon(Icons.person_rounded, size: 50, color: Colors.black),
                   ),
