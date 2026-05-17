@@ -4,15 +4,21 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 60
 
-    environment:
-      flutter: stable
-      xcode: latest
+                environment:
+                  flutter: stable
+                  xcode: latest
 
     scripts:
-      - name: 1. Initialiser l'arborescence iOS
+      - name: 1. Initialiser l'arborescence iOS (Sécurisé)
         script: |
+          echo "Sauvegarde de ton pubspec.yaml personnalisé..."
+          cp pubspec.yaml pubspec.yaml.bak
+
           echo "Génération du projet iOS natif..."
           flutter create . --project-name vipfit --org com.hx --platforms ios
+
+          echo "Restauration de ton pubspec.yaml personnalisé..."
+          mv pubspec.yaml.bak pubspec.yaml
 
       - name: 2. Télécharger les dépendances et générer l'icône
         script: |
@@ -24,13 +30,11 @@ workflows:
       - name: 3. Leurre de signature (Faker la Development Team)
         script: |
           echo "Injection d'une fausse Team ID dans la configuration de build..."
-          # On écrit directement à la fin du fichier de configuration généré par Flutter
           echo "DEVELOPMENT_TEAM = 1A2B3C4D5E" >> ios/Flutter/Release.xcconfig
 
       - name: 4. Compiler l'application normalement (Sans signature)
         script: |
           echo "Compilation officielle via Flutter..."
-          # La fausse Team ID débloque la commande, et --no-codesign empêche Xcode de râler
           flutter build ios --release --no-codesign
 
       - name: 5. Créer le fichier .ipa pour Sideloadly
@@ -39,7 +43,6 @@ workflows:
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           
-          # Préparation du dossier requis pour l'installation alternative
           mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r -q vipfit.ipa Payload
