@@ -18,30 +18,53 @@ workflows:
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-            - name: 1.5 Générer automatiquement l'icône de l'application
+      - name: 3. Forçage chirurgical de Xcode (Contournement Development Team)
         script: |
-          if [ -f "assets/app_icon.png" ]; then
-            flutter pub get
-            dart run flutter_launcher_icons
+          echo "Désactivation des signatures dans le fichier projet Xcode..."
+          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
+          
+          if [ -f "$PBXPROJ" ]; then
+            # Élimine la nécessité d'une équipe de développement (DevelopmentTeam)
+            sed -i '' 's/DevelopmentTeam = .*/DevelopmentTeam = "";/g' "$PBXPROJ"
+            
+            # Force le style de signature sur Manuel (évite la recherche automatique d'un compte Apple)
+            sed -i '' 's/CODE_SIGN_STYLE = .*/CODE_SIGN_STYLE = Manual;/g' "$PBXPROJ"
+            
+            # Vide les identités de signature pour forcer le mode sans signature
+            sed -i '' 's/CODE_SIGN_IDENTITY = .*/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
+            sed -i '' 's/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = .*/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' "$PBXPROJ"
+            
+            # Supprime toute référence à un profil de provisionnement
+            sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = .*/PROVISIONING_PROFILE_SPECIFIER = "";/g' "$PBXPROJ"
+            
+            echo "Modification du projet Xcode réussie."
+          else
+            echo "Erreur : Fichier project.pbxproj introuvable."
+            exit 1
           fi
-      - name: 3. Compiler la version iOS (Sans signature)
-        script: |
-          echo "Compilation en cours... (Mode sans signature Apple)"
+
+          echo "Injection des variables d'environnement de secours..."
+          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
+          echo "COMPILER_INDEX_STORE_ENABLE=NO" >> ios/Flutter/Release.xcconfig
+
+          echo "Lancement de la compilation de l'application..."
           flutter build ios --release --no-codesign
       - name: 4. Créer le fichier .ipa
         script: |
-          echo "Empaquetage du Payload..."
+          echo "Empaquetage du Payload pour Sideloadly..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           mkdir -p Payload
-          mv Runner.app Payload/
+          cp -r Runner.app Payload/
           zip -r -q ../ipa/vipfit.ipa Payload
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - test@example.com # Codemagic remplacera par votre email de compte
+          - test@example.com
         notify:
           success: true
           failure: true
