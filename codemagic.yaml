@@ -15,46 +15,29 @@ workflows:
           else
             echo "Dossier iOS déjà présent."
           fi
-      - name: 2. Préparer les fichiers Flutter pour Xcode
+      - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-          # Cette commande pré-compile les assets et les fichiers de l'application sans lancer Xcode
-          flutter build ios --config-only
-      - name: 3. Forcer la compilation Xcode brute (Zéro Signature)
+      - name: 3. Compiler en mode Debug (Contournement ultime de la Team Apple)
         script: |
-          echo "Démarrage de la compilation directe via xcodebuild..."
-          cd ios
-          
-          # Nettoyage des dossiers
-          xcodebuild clean
-          
-          # Compilation brute en spécifiant de NE PAS SIGNER et de NE PAS CHERCHER d'équipe
-          xcodebuild -workspace Runner.xcworkspace \
-                     -scheme Runner \
-                     -configuration Release \
-                     -sdk iphoneos \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGN_IDENTITY="" \
-                     DEVELOPMENT_TEAM="" \
-                     PROVISIONING_PROFILE_SPECIFIER="" \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
-                     build
-      - name: 4. Créer le fichier .ipa pour Sideloadly
+          echo "Compilation en mode de débogage sans signature (Autorisé par Apple sans compte)..."
+          flutter build ios --debug --no-codesign
+      - name: 4. Convertir et créer le fichier .ipa pour Sideloadly
         script: |
-          echo "Création du fichier .ipa final..."
+          echo "Préparation du Payload..."
           mkdir -p build/ios/ipa
+          cd build/ios/iphoneos
           
-          # On crée la structure du Payload demandée par Sideloadly
-          mkdir -p build/ios/Payload
+          # Création du dossier requis par Sideloadly
+          mkdir -p Payload
+          cp -r Runner.app Payload/
           
-          # Copie du binaire compilé par Xcode vers le Payload
-          cp -r build/ios/iphoneos/Runner.app build/ios/Payload/
+          # Petite astuce : on nettoie les fichiers de liaisons spécifiques au débug local pour éviter les rejets
+          rm -rf Payload/Runner.app/Frameworks/lib_flutter_xcode.dylib 2>/dev/null || true
           
-          # Compression au format .ipa
-          cd build/ios
-          zip -r -q ipa/vipfit.ipa Payload
-          echo "L'IPA sans signature a été créé avec succès !"
+          # Compression en .ipa
+          zip -r -q ../ipa/vipfit.ipa Payload
+          echo "Fichier .ipa généré avec succès en esquivant Xcode !"
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
