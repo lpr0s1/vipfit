@@ -5,18 +5,7 @@ void main() {
   runApp(const VipFitApp());
 }
 
-/// --- STOCKAGE TEMPORAIRE ---
-class LocalStorage {
-  static final Map<String, dynamic> _storage = {
-    'age': 22,
-    'sex': 'Homme',
-    'weight': 70.0,
-    'height': 175.0,
-    'targetMuscle': 'Full body',
-  };
-  static void save(String key, dynamic value) => _storage[key] = value;
-  static dynamic get(String key) => _storage[key];
-}
+
 
 class VipFitApp extends StatelessWidget {
   const VipFitApp({super.key});
