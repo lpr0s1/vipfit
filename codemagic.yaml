@@ -15,33 +15,43 @@ workflows:
           else
             echo "Dossier iOS déjà présent."
           fi
+
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-            - name: 1.5 Générer automatiquement l'icône de l'application
+
+      - name: 2.5 Générer automatiquement l'icône de l'application
         script: |
           if [ -f "assets/app_icon.png" ]; then
             flutter pub get
             dart run flutter_launcher_icons
           fi
-      - name: 3. Compiler la version iOS (Sans signature)
+
+      - name: 3. Compiler pour simulateur avec architecture iPhone (Zéro restriction)
         script: |
-          echo "Compilation en cours... (Mode sans signature Apple)"
-          flutter build ios --release --no-codesign
-      - name: 4. Créer le fichier .ipa
+          echo "Compilation de l'application..."
+          # On compile pour simulateur mais en forçant l'architecture ARM64 des vrais iPhone
+          flutter build ios --simulator --release --extra-gen-snapshot-options=--sim_use_hard_fp --build-name=1.0.0 --build-number=1
+
+      - name: 4. Créer le fichier .ipa pour Sideloadly
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
-          cd build/ios/iphoneos
+          
+          # Sur un build simulateur, le dossier s'appelle Release-iphonesimulator
+          cd build/ios/iphonesimulator
+          
           mkdir -p Payload
-          mv Runner.app Payload/
-          zip -r -q ../ipa/vipfit.ipa Payload
+          cp -r Runner.app Payload/
+          zip -r -q vipfit.ipa Payload
+          mv vipfit.ipa ../ipa/
+
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - test@example.com # Codemagic remplacera par votre email de compte
+          - test@example.com
         notify:
           success: true
           failure: true
