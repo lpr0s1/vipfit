@@ -9,79 +9,54 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: 1. Initialiser l'arborescence iOS
+      - name: 1. Nettoyage complet avant génération
         script: |
-          echo "Génération des dossiers natifs iOS..."
-          if [ ! -d "ios" ]; then
-            flutter create . --project-name vipfit --org com.hx --platforms ios
-          else
-            echo "Dossier iOS déjà présent."
-          fi
+          echo "Suppression du dossier iOS pour repartir propre..."
+          rm -rf ios
+          flutter create . --project-name vipfit --org com.hx --platforms ios
 
-      - name: 2. Télécharger les dépendances
-        script: |
-          flutter pub get
+      - name: 2. Dépendances
+        script: flutter pub get
 
-      - name: 2.5 Générer l'icône de l'application
+      - name: 3. Patch anti-signature AVANT build
         script: |
-          if [ -f "assets/app_icon.png" ]; then
-            dart run flutter_launcher_icons
-          else
-            echo "Pas d'icône trouvée, étape ignorée."
-          fi
-
-      - name: 3. Forcer Xcode à ignorer la Development Team et la Signature
-        script: |
-          echo "Modification chirurgicale du fichier projet Xcode..."
           PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
-          
-          if [ -f "$PBXPROJ" ]; then
-            # 1. On supprime les lignes CODE_SIGN_IDENTITY existantes pour éviter les conflits
-            sed -i '' '/CODE_SIGN_IDENTITY/d' "$PBXPROJ"
-            
-            # 2. On désactive le "Automatic Signing" qui force la recherche d'une Team
-            sed -i '' 's/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/g' "$PBXPROJ"
-            
-            # 3. On injecte l'absence de Team et d'identité de signature dans toutes les configurations de build
-            sed -i '' 's/DevelopmentTeam = .*/DevelopmentTeam = "";/g' "$PBXPROJ"
-            
-            # 4. On s'assure que le dictionnaire TargetAttributes n'exige pas de Team
-            sed -i '' '/DevelopmentTeam = /d' "$PBXPROJ"
-            
-            echo "Injection des flags de contournement globaux dans Release.xcconfig..."
-            mkdir -p ios/Flutter
-            echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
-            echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
-            echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
-            echo "PROVISIONING_PROFILE_SPECIFIER=" >> ios/Flutter/Release.xcconfig
-            echo "DEVELOPMENT_TEAM=" >> ios/Flutter/Release.xcconfig
-          else
-            echo "Erreur : Fichier Xcode introuvable !"
-            exit 1
-          fi
 
-      - name: 4. Compiler la version iOS (Sans signature)
-        script: |
-          echo "Compilation en cours..."
-          flutter build ios --release --no-codesign --build-number=1 --build-name=1.0.0
+          echo "Neutralisation totale de la signature..."
 
-      - name: 5. Créer le fichier .ipa pour Sideloadly
+          # Supprimer toutes les lignes liées à la signature
+          sed -i '' '/CODE_SIGN/d' "$PBXPROJ"
+          sed -i '' '/DEVELOPMENT_TEAM/d' "$PBXPROJ"
+          sed -i '' '/PROVISIONING_PROFILE/d' "$PBXPROJ"
+          sed -i '' '/ProvisioningStyle/d' "$PBXPROJ"
+
+          # Forcer le mode manuel
+          sed -i '' 's/TargetAttributes = {/TargetAttributes = {\n\t\t\t\tProvisioningStyle = Manual;/g' "$PBXPROJ"
+
+          # Ajouter un xcconfig global
+          mkdir -p ios/Flutter
+          cat <<EOF > ios/Flutter/NoSign.xcconfig
+          CODE_SIGNING_ALLOWED=NO
+CODE_SIGNING_REQUIRED=NO
+CODE_SIGN_IDENTITY=
+DEVELOPMENT_TEAM=
+PROVISIONING_PROFILE_SPECIFIER=
+EOF
+
+          echo '#include "NoSign.xcconfig"' >> ios/Flutter/Debug.xcconfig
+          echo '#include "NoSign.xcconfig"' >> ios/Flutter/Release.xcconfig
+
+      - name: 4. Build iOS sans signature
         script: |
-          echo "Empaquetage du Payload..."
-          mkdir -p build/ios/ipa
+          flutter build ios --release --no-codesign
+
+      - name: 5. Création du .ipa
+        script: |
           cd build/ios/iphoneos
           mkdir -p Payload
-          cp -r Runner.app Payload/
+          cp -R Runner.app Payload/
           zip -r -q vipfit.ipa Payload
           mv vipfit.ipa ../ipa/
 
     artifacts:
       - build/ios/ipa/*.ipa
-
-    publishing:
-      email:
-        recipients:
-          - test@example.com
-        notify:
-          success: true
-          failure: true
