@@ -21,29 +21,17 @@ workflows:
             dart run flutter_launcher_icons
           fi
 
-      - name: 3. Préparer le projet Flutter pour Xcode
+      - name: 3. Leurre de signature (Faker la Development Team)
         script: |
-          echo "Génération des fichiers de configuration Flutter..."
-          # Cette commande prépare le terrain sans lancer la compilation stricte de Flutter
-          flutter build ios --config-only --release
+          echo "Injection d'une fausse Team ID dans la configuration de build..."
+          # On écrit directement à la fin du fichier de configuration généré par Flutter
+          echo "DEVELOPMENT_TEAM = 1A2B3C4D5E" >> ios/Flutter/Release.xcconfig
 
-      - name: 4. Compilation forcée via Xcode (Contournement total)
+      - name: 4. Compiler l'application normalement (Sans signature)
         script: |
-          echo "Lancement du build direct via xcodebuild sans signature..."
-          cd ios
-          
-          # On compile le projet en direct en écrasant TOUTES les exigences d'Apple au niveau de la ligne de commande
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -sdk iphoneos \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_METHOD=manual \
-            CODE_SIGN_IDENTITY="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            DEVELOPMENT_TEAM="" \
-            COMPILER_INDEX_STORE_ENABLE=NO
+          echo "Compilation officielle via Flutter..."
+          # La fausse Team ID débloque la commande, et --no-codesign empêche Xcode de râler
+          flutter build ios --release --no-codesign
 
       - name: 5. Créer le fichier .ipa pour Sideloadly
         script: |
@@ -51,6 +39,7 @@ workflows:
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           
+          # Préparation du dossier requis pour l'installation alternative
           mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r -q vipfit.ipa Payload
