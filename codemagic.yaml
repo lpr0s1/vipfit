@@ -9,7 +9,7 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: 1. Initialiser l'arborescence iOS
+      - name: 1. Initialiser l'arborescence iOS et injecter le contournement de signature
         script: |
           echo "Génération des dossiers natifs iOS..."
           if [ ! -d "ios" ]; then
@@ -17,6 +17,10 @@ workflows:
           else
             echo "Dossier iOS déjà présent."
           fi
+          
+          echo "Désactivation forcée du Code Signing dans le projet Xcode..."
+          # Ces lignes modifient directement le fichier projet Xcode pour lui injecter les règles de non-signature
+          sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = "";\n\t\t\t\tCODE_SIGNING_ALLOWED = NO;\n\t\t\t\tCODE_SIGNING_REQUIRED = NO;/g' ios/Runner.xcodeproj/project.pbxproj
 
       - name: 2. Télécharger les dépendances
         script: |
@@ -29,11 +33,11 @@ workflows:
             dart run flutter_launcher_icons
           fi
 
-      - name: 3. Compiler la version iOS (Sans signature forcée)
+      - name: 3. Compiler la version iOS (Propre et validée)
         script: |
-          echo "Compilation en cours... (Bypass Team ID)"
-          # Correction ici : attachement direct de --xcargs sans espace pour éviter l'erreur de target file
-          flutter build ios --release --no-codesign --xcargs="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO"
+          echo "Compilation en cours..."
+          # On retire tout argument inconnu, la configuration interne du projet suffit désormais
+          flutter build ios --release --no-codesign
 
       - name: 4. Créer le fichier .ipa
         script: |
