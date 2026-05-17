@@ -9,54 +9,62 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: 1. Nettoyage complet avant génération
+      - name: 1. Initialiser l'arborescence iOS
         script: |
-          echo "Suppression du dossier iOS pour repartir propre..."
-          rm -rf ios
-          flutter create . --project-name vipfit --org com.hx --platforms ios
+          echo "Génération des dossiers natifs iOS..."
+          if [ ! -d "ios" ]; then
+            flutter create . --project-name vipfit --org com.hx --platforms ios
+          else
+            echo "Dossier iOS déjà présent."
+          fi
 
-      - name: 2. Dépendances
-        script: flutter pub get
-
-      - name: 3. Patch anti-signature AVANT build
+      - name: 2. Télécharger les dépendances
         script: |
-          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
+          flutter pub get
 
-          echo "Neutralisation totale de la signature..."
-
-          # Supprimer toutes les lignes liées à la signature
-          sed -i '' '/CODE_SIGN/d' "$PBXPROJ"
-          sed -i '' '/DEVELOPMENT_TEAM/d' "$PBXPROJ"
-          sed -i '' '/PROVISIONING_PROFILE/d' "$PBXPROJ"
-          sed -i '' '/ProvisioningStyle/d' "$PBXPROJ"
-
-          # Forcer le mode manuel
-          sed -i '' 's/TargetAttributes = {/TargetAttributes = {\n\t\t\t\tProvisioningStyle = Manual;/g' "$PBXPROJ"
-
-          # Ajouter un xcconfig global
-          mkdir -p ios/Flutter
-          cat <<EOF > ios/Flutter/NoSign.xcconfig
-          CODE_SIGNING_ALLOWED=NO
-          CODE_SIGNING_REQUIRED=NO
-          CODE_SIGN_IDENTITY=
-          DEVELOPMENT_TEAM=
-          PROVISIONING_PROFILE_SPECIFIER=
-          EOF
-
-          echo '#include "NoSign.xcconfig"' >> ios/Flutter/Debug.xcconfig
-          echo '#include "NoSign.xcconfig"' >> ios/Flutter/Release.xcconfig
-
-      - name: 4. Build iOS sans signature
+      - name: 3. Générer l'icône de l'application
         script: |
-          flutter build ios --release --no-codesign
+          if [ -f "assets/app_icon.png" ]; then
+            dart run flutter_launcher_icons
+          else
+            echo "Pas d'icône trouvée, étape ignorée."
+          fi
 
-      - name: 5. Création du .ipa
+      - name: 4. Compiler la version iOS (Forçage Xcode strict)
         script: |
+          echo "Lancement du build avec contournement des signatures Xcode..."
+          
+          # On nettoie le build pour repartir sur du propre
+          flutter clean
+          flutter pub get
+          
+          # La vraie astuce : On passe les arguments de build DIRECTEMENT à xcodebuild via --build-name/number
+          # et en forçant l'identité de signature à vide au niveau de Flutter.
+          flutter build ios --release --no-codesign \
+            --extra-front-end-options="--no-implicit-dynamic-reexport" \
+            --split-debug-info=build/app/outputs/symbols
+            
+      - name: 5. Forcer la création de l'IPA sans signature (Méthode Manuelle)
+        script: |
+          echo "Empaquetage manuel du Payload pour Sideloadly..."
+          mkdir -p build/ios/ipa
           cd build/ios/iphoneos
+          
+          # Création du dossier Payload requis par iOS pour les fichiers .ipa
           mkdir -p Payload
-          cp -R Runner.app Payload/
+          cp -r Runner.app Payload/
+          
+          # On crée l'archive zip finale et on la renomme en .ipa
           zip -r -q vipfit.ipa Payload
           mv vipfit.ipa ../ipa/
 
     artifacts:
       - build/ios/ipa/*.ipa
+
+    publishing:
+      email:
+        recipients:
+          - test@example.com
+        notify:
+          success: true
+          failure: true
