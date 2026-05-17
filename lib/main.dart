@@ -341,7 +341,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
             border: Border.all(color: Colors.white.withOpacity(0.03)),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: Main开启Center,
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
