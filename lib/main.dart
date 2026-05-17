@@ -264,8 +264,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     final bool isSelected = value == groupValue;
     return GestureDetector(
       onTap: () => onChanged(value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
+      child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -288,8 +287,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     final bool isSelected = value == groupValue;
     return GestureDetector(
       onTap: () => onChanged(value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
+      child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -497,7 +495,6 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 6),
             Text(motivationPhrase, style: const TextStyle(fontSize: 14, color: Colors.white38)),
             const SizedBox(height: 30),
-
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
