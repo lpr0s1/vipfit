@@ -6,7 +6,6 @@ void main() {
 }
 
 /// --- PERSISTENCE UNITAIRE RECREÉE SANS DÉPENDANCE ---
-/// Simule un stockage local persistant en mémoire globale pour l'exemple.
 class LocalStorage {
   static final Map<String, dynamic> _storage = {};
 
@@ -72,6 +71,10 @@ class _TypewriterTextState extends State<TypewriterText> {
 
   void _startAnimation() {
     _timer = Timer.periodic(widget.duration, (timer) {
+      if (!mounted) {
+        _timer?.cancel();
+        return;
+      }
       if (_currentIndex < widget.text.length) {
         setState(() {
           _displayedText += widget.text[_currentIndex];
@@ -122,7 +125,7 @@ class PremiumGradientText extends StatelessWidget {
   }
 }
 
-/// --- MODULE ONBOARDING : PAS À PAS SANS ENCOMBREMENT ---
+/// --- MODULE ONBOARDING : PAS À PAS ---
 class OnboardingWizard extends StatefulWidget {
   const OnboardingWizard({super.key});
 
@@ -134,7 +137,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
 
-  // Variables de profil
   int age = 22;
   String sex = 'Homme';
   double weight = 70.0;
@@ -149,7 +151,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
         curve: Curves.easeInOutCubic,
       );
     } else {
-      // Sauvegarde "locale" sans dépendance
       LocalStorage.save('age', age);
       LocalStorage.save('sex', sex);
       LocalStorage.save('weight', weight);
@@ -174,7 +175,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Barre de progression Premium
               Row(
                 children: List.generate(5, (index) => Expanded(
                   child: AnimatedContainer(
@@ -226,7 +226,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                   ],
                 ),
               ),
-              // Bouton Suivant Dynamique et Lumineux
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -239,7 +238,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: _nextStep,
-                  icon: const Icon(Icons.arrow_forward_rounded, weight: 900),
+                  icon: const Icon(Icons.arrow_forward_rounded),
                   label: Text(
                     _currentStep == 4 ? "GÉNÉRER MON PROFIL" : "SUIVANT",
                     style: const TextStyle(fontWeight: FontWeight.black, letterSpacing: 0.5),
@@ -311,19 +310,19 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
 
   Widget _buildSlider(double value, double min, double max, String unit, ValueChanged<double> onChanged) {
     return Column(
-      centerSpace: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(value.toString(), style: const TextStyle(fontSize: 64, fontWeight: FontWeight.black, color: Color(0xFF00FF66))),
-            const SizedBox(width: 8),
-            Text(unit, style: const TextStyle(fontSize: 20, color: Colors.white54)),
-          ],
-        ),
-      ),
       children: [
+        Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(value.toString(), style: const TextStyle(fontSize: 64, fontWeight: FontWeight.black, color: Color(0xFF00FF66))),
+              const SizedBox(width: 8),
+              Text(unit, style: const TextStyle(fontSize: 20, color: Colors.white54)),
+            ],
+          ),
+        ),
         const SizedBox(height: 40),
         Slider(
           value: value,
@@ -349,7 +348,6 @@ class VipFitHome extends StatefulWidget {
 class _VipFitHomeState extends State<VipFitHome> {
   int _currentIndex = 0;
 
-  // Variables d'évaluation globale
   double waterDrunk = 0.0;
   String sportDone = "Aucun";
   int sportDuration = 0;
@@ -398,7 +396,7 @@ class _VipFitHomeState extends State<VipFitHome> {
   }
 }
 
-/// --- VUE INDEX : TABLEAU DE BORD & MODAL DE CALCUL ---
+/// --- VUE INDEX : TABLEAU DE BORD ---
 class DashboardPage extends StatelessWidget {
   final Function(double, String, int, int) onAssessmentCompleted;
 
@@ -406,7 +404,6 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Récupération locale
     final double weight = LocalStorage.get('weight') ?? 70.0;
     final double height = LocalStorage.get('height') ?? 175.0;
     final double bmi = weight / ((height / 100) * (height / 100));
@@ -438,7 +435,6 @@ class DashboardPage extends StatelessWidget {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
-            // Card IMC Épurée
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -465,7 +461,6 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 30),
             const Text("ÉVALUATION DU JOUR", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white60)),
             const SizedBox(height: 12),
-            // Bouton Commencer Interactif
             InkWell(
               onTap: () => _showAssessmentModal(context),
               borderRadius: BorderRadius.circular(20),
@@ -520,7 +515,6 @@ class DashboardPage extends StatelessWidget {
 
   void _showAssessmentModal(BuildContext context) {
     double tempWater = 1.5;
-    String tempSport = "Musculation";
     int tempDuration = 45;
     int tempSleep = 7;
 
@@ -553,10 +547,10 @@ class DashboardPage extends StatelessWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF66), foregroundColor: Colors.black),
                       onPressed: () {
-                        onAssessmentCompleted(tempWater, tempSport, tempDuration, tempSleep);
+                        onAssessmentCompleted(tempWater, "Musculation", tempDuration, tempSleep);
                         Navigator.pop(context);
                       },
-                      child: const Text("ANALYSER ETMETTRE À JOUR", style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text("ANALYSER ET METTRE À JOUR", style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   )
                 ],
@@ -579,7 +573,7 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-/// --- VUE DE CALCUL DYNAMIQUE : VOTRE PROGRAMME DE LA SEMAINE ---
+/// --- VUE : PROGRAMME DE LA SEMAINE ---
 class WeeklyProgramPage extends StatelessWidget {
   final double water;
   final String sport;
@@ -600,7 +594,6 @@ class WeeklyProgramPage extends StatelessWidget {
     final double height = LocalStorage.get('height') ?? 175.0;
     final double bmi = weight / ((height / 100) * (height / 100));
 
-    // Logique algorithmique d'ajustement du programme basé sur l'IMC et l'évaluation du jour
     double targetWater = bmi > 25.0 ? 3.0 : 2.2;
     int targetSleep = bmi < 18.5 ? 9 : 8;
 
@@ -679,7 +672,7 @@ class WeeklyProgramPage extends StatelessWidget {
   Widget _buildProgramDetailsCard(double bmi) {
     String focusText = "Équilibre & Renforcement standard.";
     if (bmi < 18.5) {
-      focusText = "Focus Hypertrophie : Séances courtes (45m max), charges lourdes, aucun cardio intensif.";
+      focusText = "Focus Hypertrophie : Séances courtes (45 min max), charges lourdes, aucun cardio intensif.";
     } else if (bmi >= 25.0) {
       focusText = "Focus Déficit & Brûle-Graisse : Intégrez 20 min de HIIT à la fin de vos séances de musculation.";
     }
