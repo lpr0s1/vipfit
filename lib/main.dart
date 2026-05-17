@@ -76,16 +76,14 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
       );
     } else {
       Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => VipFitHome(
+        MaterialPageRoute(
+          builder: (_) => VipFitHome(
             sex: sex,
             age: age,
             weight: weight,
             height: height,
             targetMuscle: targetMuscle,
           ),
-          transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-          transitionDuration: const Duration(milliseconds: 500),
         ),
       );
     }
@@ -108,9 +106,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
                       color: index <= _currentStep ? const Color(0xFF00FF66) : Colors.white.withOpacity(0.05),
-                      boxShadow: index == _currentStep ? [
-                        BoxShadow(color: const Color(0xFF00FF66).withOpacity(0.5), blurRadius: 8, spreadRadius: 1)
-                      ] : null,
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -237,7 +232,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                     backgroundColor: const Color(0xFF00FF66),
                     foregroundColor: Colors.black,
                     elevation: 4,
-                    shadowColor: const Color(0xFF00FF66).withOpacity(0.3),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: _nextStep,
@@ -284,11 +278,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(value, style: TextStyle(fontSize: 18, fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500, color: isSelected ? const Color(0xFF00FF66) : Colors.white)),
-            AnimatedScale(
-              scale: isSelected ? 1.1 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded, color: isSelected ? const Color(0xFF00FF66) : Colors.white24),
-            ),
+            Icon(isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded, color: isSelected ? const Color(0xFF00FF66) : Colors.white24),
           ],
         ),
       ),
@@ -341,7 +331,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
             border: Border.all(color: Colors.white.withOpacity(0.03)),
           ),
           child: Row(
-            mainAxisAlignment: Main开启Center,
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -456,10 +446,7 @@ class _VipFitHomeState extends State<VipFitHome> {
     ];
 
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: pages[_currentIndex],
-      ),
+      body: pages[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: Colors.white.withOpacity(0.02), width: 1)),
@@ -575,7 +562,6 @@ class DashboardPage extends StatelessWidget {
                   gradient: const LinearGradient(colors: [Color(0xFF0F1522), Color(0xFF090D15)]),
                   border: Border.all(color: const Color(0xFF00FF66).withOpacity(0.4)),
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: const Color(0xFF00FF66).withOpacity(0.05), blurRadius: 15)],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -854,7 +840,6 @@ class ProfilePage extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(colors: [Color(0xFF00FF66), Color(0xFF00E5FF)]),
-                      boxShadow: [BoxShadow(color: const Color(0xFF00FF66).withOpacity(0.2), blurRadius: 20)],
                     ),
                     child: const Icon(Icons.person_rounded, size: 50, color: Colors.black),
                   ),
