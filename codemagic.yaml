@@ -15,42 +15,33 @@ workflows:
           else
             echo "Dossier iOS déjà présent."
           fi
-      - name: 1.5 Générer automatiquement l'icône de l'application
+      - name: 2. Télécharger les dépendances
+        script: |
+          flutter pub get
+            - name: 1.5 Générer automatiquement l'icône de l'application
         script: |
           if [ -f "assets/app_icon.png" ]; then
             flutter pub get
             dart run flutter_launcher_icons
           fi
-      - name: 2. Télécharger les dépendances
+      - name: 3. Compiler la version iOS (Sans signature)
         script: |
-          flutter pub get
-      - name: 3. Compiler la version iOS (Contournement total Signature & Team ID)
-        script: |
-          echo "Forçage des paramètres de non-signature dans la configuration Flutter..."
-          
-          # On désactive explicitement la signature dans le fichier d'override de Flutter
-          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
-          echo "PROVISIONING_PROFILE_SPECIFIER=" >> ios/Flutter/Release.xcconfig
-          echo "DEVELOPMENT_TEAM=" >> ios/Flutter/Release.xcconfig
-          
-          echo "Compilation sans signature..."
-          flutter build ios --release --no-codesign --build-name=1.0.0 --build-number=1
+          echo "Compilation en cours... (Mode sans signature Apple)"
+          flutter build ios --release --no-codesign
       - name: 4. Créer le fichier .ipa
         script: |
-          echo "Empaquetage du Payload pour Sideloadly..."
+          echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           mkdir -p Payload
-          cp -r Runner.app Payload/
+          mv Runner.app Payload/
           zip -r -q ../ipa/vipfit.ipa Payload
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - test@example.com
+          - test@example.com # Codemagic remplacera par votre email de compte
         notify:
           success: true
           failure: true
