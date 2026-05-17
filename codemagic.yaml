@@ -7,81 +7,41 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
-      - name: 1. Créer la structure de base sans fioritures
+      - name: 1. Initialiser l'arborescence iOS
         script: |
-          echo "Génération des fichiers natifs indispensables..."
-          flutter create . --project-name vipfit --org com.apple.test --platforms ios
-          sleep 2
-
-      - name: 2. Installer les packages
+          echo "Génération des dossiers natifs iOS..."
+          if [ ! -d "ios" ]; then
+            flutter create . --project-name vipfit --org com.hx --platforms ios
+          else
+            echo "Dossier iOS déjà présent."
+          fi
+      - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-
-      - name: 3. Forcer le moteur Flutter à compiler le code Dart (Sans Xcode)
+            - name: 1.5 Générer automatiquement l'icône de l'application
         script: |
-          echo "Compilation du code Dart en binaire natif ARM64..."
-          # Cette commande magique compile le code d'une manière que Xcode ne peut pas bloquer
-          flutter build aot --release --target-platform ios --ios-arch arm64
-
-      - name: 4. Neutraliser Xcode à la racine (Remplacement des variables globales)
+          if [ -f "assets/app_icon.png" ]; then
+            flutter pub get
+            dart run flutter_launcher_icons
+          fi
+      - name: 3. Compiler la version iOS (Sans signature)
         script: |
-          echo "Éradication totale du besoin de signature dans l'environnement Mac..."
-          
-          # On injecte les flags directement dans TOUS les fichiers de configuration possibles
-          for file in ios/Flutter/*.xcconfig; do
-            echo "" >> "$file"
-            echo "CODE_SIGNING_ALLOWED = NO" >> "$file"
-            echo "CODE_SIGNING_REQUIRED = NO" >> "$file"
-            echo "CODE_SIGN_IDENTITY = " >> "$file"
-            echo "DEVELOPMENT_TEAM = " >> "$file"
-            echo "PROVISIONING_PROFILE_SPECIFIER = " >> "$file"
-          done
-
-          # On désactive la signature automatique dans le pbxproj de manière radicale
-          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
-          sed -i '' 's/CODE_SIGN_STYLE = .*/CODE_SIGN_STYLE = Manual;/g' "$PBXPROJ"
-          sed -i '' 's/DevelopmentTeam = .*/DevelopmentTeam = "";/g' "$PBXPROJ"
-          sed -i '' 's/DEVELOPMENT_TEAM = .*/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
-
-      - name: 5. Lancer Xcode en mode "Archive Seule" (Ligne de commande pure)
+          echo "Compilation en cours... (Mode sans signature Apple)"
+          flutter build ios --release --no-codesign
+      - name: 4. Créer le fichier .ipa
         script: |
-          echo "Lancement de xcodebuild en mode force brute..."
-          cd ios
-          
-          # On utilise xcodebuild DIRECTEMENT sans passer par Flutter, en lui interdisant de signer
-          xcodebuild -workspace Runner.xcworkspace \
-                     -scheme Runner \
-                     -configuration Release \
-                     -sdk iphoneos \
-                     -allowProvisioningUpdates NO \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGN_IDENTITY="" \
-                     DEVELOPMENT_TEAM="" \
-                     PROVISIONING_PROFILE_SPECIFIER="" \
-                     GENERATED_PKGINFO_FILE="" \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
-                     clean build
-
-      - name: 6. Fabriquer l'IPA pour Sideloadly
-        script: |
-          echo "Création du package final pour ton iPhone..."
+          echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
-          
-          # On récupère le fichier brut compilé directement par Xcode
-          mkdir -p build/ios/Payload
-          cp -r ios/build/Release-iphoneos/Runner.app build/ios/Payload/ 2>/dev/null || cp -r build/ios/iphoneos/Runner.app build/ios/Payload/
-          
-          cd build/ios
-          zip -r -q ipa/vipfit.ipa Payload
-          echo "L'IPA est enfin prêt pour Sideloadly !"
-          
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          mv Runner.app Payload/
+          zip -r -q ../ipa/vipfit.ipa Payload
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - test@example.com
+          - test@example.com # Codemagic remplacera par votre email de compte
         notify:
           success: true
           failure: true
