@@ -1,23 +1,32 @@
+
 name: vipfit
-description: Application de sport premium VipFit
-publish_to: "none"
+description: App de sport
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.6
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  flutter_lints: ^3.0.0
+  # Package indispensable pour générer l'icône automatiquement
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
+  # Déclaration de l'image de votre icône dans les ressources de l'application
+  assets:
+    - assets/app_icon.png
 
+# Configuration de génération de l'icône iOS
 flutter_launcher_icons:
   ios: true
   image_path: "assets/app_icon.png"
