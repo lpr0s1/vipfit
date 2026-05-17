@@ -27,20 +27,30 @@ workflows:
             dart run flutter_launcher_icons
           fi
 
-      - name: 3. Compiler pour simulateur avec architecture iPhone (Zéro restriction)
+      - name: 2.8 Patcher la configuration Xcode (Contournement Signature)
         script: |
-          echo "Compilation de l'application..."
-          # On compile pour simulateur mais en forçant l'architecture ARM64 des vrais iPhone
-          flutter build ios --simulator --release --extra-gen-snapshot-options=--sim_use_hard_fp --build-name=1.0.0 --build-number=1
+          echo "Désactivation des exigences de signature dans le projet Xcode..."
+          PBXPROJ_PATH="ios/Runner.xcodeproj/project.pbxproj"
+          if [ -f "$PBXPROJ_PATH" ]; then
+            # Force la désactivation du code signing requis et supprime l'obligation d'une Team ID
+            sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' "$PBXPROJ_PATH"
+            sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = "AUTOMATIC";/g' "$PBXPROJ_PATH"
+            echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
+          else
+            echo "Fichier pbxproj introuvable, tentative via xcconfig..."
+            echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
+          fi
+
+      - name: 3. Compiler la version iOS (Vrai appareil - Sans signature)
+        script: |
+          echo "Compilation de la version Release..."
+          flutter build ios --release --no-codesign --build-name=1.0.0 --build-number=1
 
       - name: 4. Créer le fichier .ipa pour Sideloadly
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
-          
-          # Sur un build simulateur, le dossier s'appelle Release-iphonesimulator
-          cd build/ios/iphonesimulator
-          
+          cd build/ios/iphoneos
           mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r -q vipfit.ipa Payload
