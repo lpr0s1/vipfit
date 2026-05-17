@@ -68,7 +68,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     super.initState();
     _ageController = TextEditingController(text: age.toString());
     _weightController = TextEditingController(text: weight.toString());
-    _heightController = TextEditingController(text: height.toString());
+    _heightController = TextEditingController(text: height.toInt().toString());
   }
 
   @override
@@ -152,14 +152,22 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                         min: 14,
                         max: 99,
                         unit: "ans",
-                        onChanged: (val) => setState(() {
-                          age = val.toInt();
-                          _ageController.text = age.toString();
-                        }),
+                        onChanged: (val) {
+                          setState(() {
+                            age = val.toInt();
+                            // Évite de réinitialiser le curseur pendant la frappe
+                            if (!_ageController.hasFocus) {
+                              _ageController.text = age.toString();
+                            }
+                          });
+                        },
                         onTextChanged: (val) {
+                          if (val.isEmpty) return;
                           final parsed = double.tryParse(val);
-                          if (parsed != null && parsed >= 14 && parsed <= 99) {
-                            setState(() => age = parsed.toInt());
+                          if (parsed != null) {
+                            setState(() {
+                              age = parsed.toInt().clamp(14, 99);
+                            });
                           }
                         }
                       ),
@@ -174,14 +182,21 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                         max: 180,
                         unit: "kg",
                         isDecimal: true,
-                        onChanged: (val) => setState(() {
-                          weight = double.parse(val.toStringAsFixed(1));
-                          _weightController.text = weight.toString();
-                        }),
+                        onChanged: (val) {
+                          setState(() {
+                            weight = double.parse(val.toStringAsFixed(1));
+                            if (!_weightController.hasFocus) {
+                              _weightController.text = weight.toString();
+                            }
+                          });
+                        },
                         onTextChanged: (val) {
+                          if (val.isEmpty) return;
                           final parsed = double.tryParse(val);
-                          if (parsed != null && parsed >= 40 && parsed <= 180) {
-                            setState(() => weight = parsed);
+                          if (parsed != null) {
+                            setState(() {
+                              weight = parsed.clamp(40.0, 180.0);
+                            });
                           }
                         }
                       ),
@@ -195,14 +210,21 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                         min: 120,
                         max: 230,
                         unit: "cm",
-                        onChanged: (val) => setState(() {
-                          height = val.roundToDouble();
-                          _heightController.text = height.toInt().toString();
-                        }),
+                        onChanged: (val) {
+                          setState(() {
+                            height = val.roundToDouble();
+                            if (!_heightController.hasFocus) {
+                              _heightController.text = height.toInt().toString();
+                            }
+                          });
+                        },
                         onTextChanged: (val) {
+                          if (val.isEmpty) return;
                           final parsed = double.tryParse(val);
-                          if (parsed != null && parsed >= 120 && parsed <= 230) {
-                            setState(() => height = parsed.roundToDouble());
+                          if (parsed != null) {
+                            setState(() {
+                              height = parsed.roundToDouble().clamp(120.0, 230.0);
+                            });
                           }
                         }
                       ),
@@ -327,19 +349,19 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           decoration: BoxDecoration(
             color: const Color(0xFF0F1522),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.02)),
+            border: Border.all(color: Colors.white.withOpacity(0.03)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              IntrinsicWidth(
+              SizedBox(
+                width: 110, // Largeur fixe sécurisée pour éviter les crashs d'overflow
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.numberWithOptions(decimal: isDecimal),
@@ -347,7 +369,8 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   onChanged: onTextChanged,
-                  style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: Color(0xFF00FF66), letterSpacing: -1),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Color(0xFF00FF66), letterSpacing: -1),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
@@ -355,12 +378,12 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(unit, style: const TextStyle(fontSize: 18, color: Colors.white38, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 12),
+              Text(unit, style: const TextStyle(fontSize: 20, color: Colors.white38, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 35),
         SliderTheme(
           data: SliderThemeData(
             trackHeight: 6,
@@ -374,11 +397,17 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
             value: value.clamp(min, max),
             min: min,
             max: max,
-            onChanged: onChanged,
+            onChanged: (val) {
+              onChanged(val);
+              // Met à jour dynamiquement le texte du champ UNIQUEMENT si l'utilisateur utilise le slider
+              if (!controller.hasFocus) {
+                controller.text = isDecimal ? val.toStringAsFixed(1) : val.toInt().toString();
+              }
+            },
           ),
         ),
         const SizedBox(height: 10),
-        Text("Appuyez sur le chiffre pour l'éditer manuellement", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.2))),
+        Text("Appuyez sur le chiffre pour l'éditer au clavier", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.2))),
       ],
     );
   }
