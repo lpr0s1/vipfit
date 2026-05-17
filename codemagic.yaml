@@ -1,6 +1,7 @@
 workflows:
-  vipfit_ios:
-    name: VipFit
+  ios-unsigned-ipa:
+    name: vipfit
+    instance_type: mac_mini_m2
     max_build_duration: 60
 
     environment:
@@ -8,47 +9,39 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: Create Flutter project
+      - name: 1. Initialiser l'arborescence iOS
         script: |
-          flutter create vipfit
-          cd vipfit
+          echo "Génération des dossiers natifs iOS..."
+          if [ ! -d "ios" ]; then
+            flutter create . --project-name vipfit --org com.hx --platforms ios
+          else
+            echo "Dossier iOS déjà présent."
+          fi
 
-      - name: Replace pubspec.yaml
-        script: |
-          cat > pubspec.yaml << 'EOF'
-name: vipfit
-description: Application de sport premium VipFit
-publish_to: "none"
-version: 1.0.0+1
-
-environment:
-  sdk: ">=3.0.0 <4.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-flutter:
-  uses-material-design: true
-EOF
-
-      - name: Replace main.dart
-        script: |
-          cat > lib/main.dart << 'EOF'
-          // ICI TU COLLES LE MAIN.DART COMPLET DE VIPFIT
-EOF
-
-      - name: Flutter pub get
+      - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
 
-      - name: Build iOS IPA
+      - name: 1.5 Générer automatiquement l'icône de l'application
         script: |
-          flutter build ipa --release --no-tree-shake-icons
+          if [ -f "assets/app_icon.png" ]; then
+            flutter pub get
+            dart run flutter_launcher_icons
+          fi
+
+      - name: 3. Compiler la version iOS (Sans signature)
+        script: |
+          echo "Compilation en cours... (Mode sans signature Apple)"
+          flutter build ios --release --no-codesign
+
+      - name: 4. Créer le fichier .ipa
+        script: |
+          echo "Empaquetage du Payload..."
+          mkdir -p build/ios/ipa
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          mv Runner.app Payload/
+          zip -r -q ../ipa/vipfit.ipa Payload
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -56,4 +49,7 @@ EOF
     publishing:
       email:
         recipients:
-          - "ton-email@exemple.com"
+          - test@example.com
+        notify:
+          success: true
+          failure: true
