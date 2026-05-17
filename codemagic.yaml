@@ -1,47 +1,58 @@
 workflows:
   ios-unsigned-ipa:
-    name: vxkit
+    name: vipfit
     instance_type: mac_mini_m2
     max_build_duration: 60
+
     environment:
       flutter: stable
       xcode: latest
+
     scripts:
       - name: 1. Initialiser l'arborescence iOS
         script: |
           echo "Génération des dossiers natifs iOS..."
           if [ ! -d "ios" ]; then
-            flutter create . --project-name vxkit --org com.hx --platforms ios
+            # Génération propre avec le nom vipfit
+            flutter create . --project-name vipfit --org com.hx --platforms ios
           else
             echo "Dossier iOS déjà présent."
           fi
+
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-            - name: 1.5 Générer automatiquement l'icône de l'application
-        script: |
-          if [ -f "assets/app_icon.png" ]; then
-            flutter pub get
-            dart run flutter_launcher_icons
-          fi
+
       - name: 3. Compiler la version iOS (Sans signature)
         script: |
           echo "Compilation en cours... (Mode sans signature Apple)"
           flutter build ios --release --no-codesign
-      - name: 4. Créer le fichier .ipa
+
+      - name: 4. Créer le fichier .ipa pour Sideloadly
         script: |
           echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
+          
+          # Positionnement dans le dossier de build de Flutter
           cd build/ios/iphoneos
+          
+          # Structure requise pour l'installation iOS
           mkdir -p Payload
-          mv Runner.app Payload/
-          zip -r -q ../ipa/vxkit.ipa Payload
+          cp -r Runner.app Payload/
+          
+          # Compression au format .ipa pour Sideloadly
+          zip -r -q vipfit.ipa Payload
+          
+          # Envoi vers le dossier d'artefacts Codemagic
+          mv vipfit.ipa ../ipa/
+
     artifacts:
       - build/ios/ipa/*.ipa
+
     publishing:
       email:
         recipients:
-          - test@example.com # Codemagic remplacera par votre email de compte
+          - test@example.com
         notify:
           success: true
           failure: true
