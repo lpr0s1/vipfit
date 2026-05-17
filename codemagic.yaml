@@ -3,62 +3,45 @@ workflows:
     name: vipfit
     instance_type: mac_mini_m2
     max_build_duration: 60
-
     environment:
       flutter: stable
       xcode: latest
-
     scripts:
-      - name: 1. Initialiser l'arborescence iOS (Sécurisé)
+      - name: 1. Initialiser l'arborescence iOS
         script: |
-          echo "Sauvegarde de ton code..."
-          mkdir -p temp_src
-          cp -r lib pubspec.yaml temp_src/ 2>/dev/null || cp pubspec.yaml temp_src/
-
-          echo "Génération complète du projet..."
-          flutter create . --project-name vipfit --org com.hx --platforms ios
-
-          echo "Restauration de ton code personnalisé..."
-          cp -r temp_src/pubspec.yaml ./
-          if [ -d "temp_src/lib" ]; then
-            cp -r temp_src/lib/ ./lib/
+          echo "Génération des dossiers natifs iOS..."
+          if [ ! -d "ios" ]; then
+            flutter create . --project-name vipfit --org com.hx --platforms ios
+          else
+            echo "Dossier iOS déjà présent."
           fi
-
-      - name: 2. Télécharger les dépendances et générer l'icône
+      - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
+            - name: 1.5 Générer automatiquement l'icône de l'application
+        script: |
           if [ -f "assets/app_icon.png" ]; then
+            flutter pub get
             dart run flutter_launcher_icons
           fi
-
-      - name: 3. Leurre de signature (Faker la Development Team)
+      - name: 3. Compiler la version iOS (Sans signature)
         script: |
-          echo "Injection d'une fausse Team ID dans la configuration de build..."
-          echo "DEVELOPMENT_TEAM = 1A2B3C4D5E" >> ios/Flutter/Release.xcconfig
-
-      - name: 4. Compiler l'application normalement (Sans signature)
-        script: |
-          echo "Compilation officielle via Flutter..."
+          echo "Compilation en cours... (Mode sans signature Apple)"
           flutter build ios --release --no-codesign
-
-      - name: 5. Créer le fichier .ipa pour Sideloadly
+      - name: 4. Créer le fichier .ipa
         script: |
-          echo "Création du package IPA..."
+          echo "Empaquetage du Payload..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
-          
           mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r -q vipfit.ipa Payload
-          mv vipfit.ipa ../ipa/
-
+          mv Runner.app Payload/
+          zip -r -q ../ipa/vipfit.ipa Payload
     artifacts:
       - build/ios/ipa/*.ipa
-
     publishing:
       email:
         recipients:
-          - test@example.com
+          - test@example.com # Codemagic remplacera par votre email de compte
         notify:
           success: true
           failure: true
