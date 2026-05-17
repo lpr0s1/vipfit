@@ -599,8 +599,8 @@ class DashboardPage extends StatelessWidget {
                   const Text("Mettre à jour mes métriques", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 25),
                   _buildModalSlider("Consommation d'eau", tempWater, 0, 5, "L", (v) => setModalState(() => tempWater = v)),
-                  _buildModalSlider("Activité physique", tempDuration.toDouble(), 0, 180, "min", (v) => setModalState(() => tempDuration = v.toInt())),
-                  _buildModalSlider("Sommeil récupérateur", tempSleep.toDouble(), 3, 12, "heures", (v) => setModalState(() => tempSleep = v.toInt())),
+                  _buildModalSlider("Activité physique", tempDuration.toDouble(), 0, 180, "min", (v) => setModalState(() => tempDuration = v.toInt()), forceInteger: true),
+                  _buildModalSlider("Sommeil récupérateur", tempSleep.toDouble(), 3, 12, "heures", (v) => setModalState(() => tempSleep = v.toInt()), forceInteger: true),
                   const SizedBox(height: 25),
                   SizedBox(
                     width: double.infinity,
@@ -627,7 +627,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildModalSlider(String title, double current, double min, double max, String unit, ValueChanged<double> onChange) {
+  Widget _buildModalSlider(String title, double current, double min, double max, String unit, ValueChanged<double> onChange, {bool forceInteger = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -637,7 +637,10 @@ class DashboardPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70)),
-              Text("${current is int ? current : current.toStringAsFixed(1)} $unit", style: const TextStyle(color: Color(0xFF00FF66), fontWeight: FontWeight.bold)),
+              Text(
+                forceInteger ? "${current.toInt()} $unit" : "${current.toStringAsFixed(1)} $unit", 
+                style: const TextStyle(color: Color(0xFF00FF66), fontWeight: FontWeight.bold)
+              ),
             ],
           ),
           Slider(value: current, min: min, max: max, activeColor: const Color(0xFF00FF66), onChanged: onChange),
