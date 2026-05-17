@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const VipFitApp());
 }
 
-/// --- STOCKAGE TEMPORAIRE SANS DÉPENDANCE ---
+/// --- STOCKAGE TEMPORAIRE ---
 class LocalStorage {
-  static final Map<String, dynamic> _storage = {};
+  static final Map<String, dynamic> _storage = {
+    'age': 22,
+    'sex': 'Homme',
+    'weight': 70.0,
+    'height': 175.0,
+    'targetMuscle': 'Full body',
+  };
   static void save(String key, dynamic value) => _storage[key] = value;
   static dynamic get(String key) => _storage[key];
 }
@@ -21,11 +28,11 @@ class VipFitApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF080B10),
+        scaffoldBackgroundColor: const Color(0xFF06090E),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF00FF66), 
           secondary: Color(0xFF00E5FF),
-          surface: Color(0xFF121824),
+          surface: Color(0xFF0F1522),
         ),
         useMaterial3: true,
       ),
@@ -34,7 +41,7 @@ class VipFitApp extends StatelessWidget {
   }
 }
 
-/// --- MODULE ONBOARDING ---
+/// --- MODULE ONBOARDING PREMIUM ---
 class OnboardingWizard extends StatefulWidget {
   const OnboardingWizard({super.key});
 
@@ -52,12 +59,33 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
   double height = 175.0;
   String targetMuscle = 'Full body';
 
+  late TextEditingController _ageController;
+  late TextEditingController _weightController;
+  late TextEditingController _heightController;
+
+  @override
+  void initState() {
+    super.initState();
+    _ageController = TextEditingController(text: age.toString());
+    _weightController = TextEditingController(text: weight.toString());
+    _heightController = TextEditingController(text: height.toString());
+  }
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    _weightController.dispose();
+    _heightController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _nextStep() {
     if (_currentStep < 4) {
       setState(() => _currentStep++);
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.fastOutSlowIn,
       );
     } else {
       LocalStorage.save('age', age);
@@ -67,7 +95,11 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
       LocalStorage.save('targetMuscle', targetMuscle);
 
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const VipFitHome()),
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const VipFitHome(),
+          transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
       );
     }
   }
@@ -81,15 +113,19 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Barre de progression
+              // Indicateur Premium de progression
               Row(
                 children: List.generate(5, (index) => Expanded(
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
                     height: 4,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
-                      color: index <= _currentStep ? const Color(0xFF00FF66) : Colors.white12,
-                      borderRadius: BorderRadius.circular(2),
+                      color: index <= _currentStep ? const Color(0xFF00FF66) : Colors.white.withOpacity(0.05),
+                      boxShadow: index == _currentStep ? [
+                        BoxShadow(color: const Color(0xFF00FF66).withOpacity(0.5), blurRadius: 8, spreadRadius: 1)
+                      ] : null,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 )),
@@ -101,31 +137,85 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
                     _buildStep(
-                      title: "Quel est votre sexe ?",
+                      title: "Déterminons votre profil",
+                      subtitle: "Le genre influence les calculs de métabolisme de base.",
                       child: Column(
                         children: ['Homme', 'Femme', 'Autre'].map((s) => _buildSelectionTile(s, sex, (val) => setState(() => sex = val))).toList(),
                       ),
                     ),
                     _buildStep(
                       title: "Quel âge avez-vous ?",
-                      child: _buildSlider(age.toDouble(), 14, 99, "ans", (val) => setState(() => age = val.toInt())),
+                      subtitle: "Votre âge permet d'ajuster vos zones de fréquence cardiaque.",
+                      child: _buildEditableSlider(
+                        controller: _ageController,
+                        value: age.toDouble(),
+                        min: 14,
+                        max: 99,
+                        unit: "ans",
+                        onChanged: (val) => setState(() {
+                          age = val.toInt();
+                          _ageController.text = age.toString();
+                        }),
+                        onTextChanged: (val) {
+                          final parsed = double.tryParse(val);
+                          if (parsed != null && parsed >= 14 && parsed <= 99) {
+                            setState(() => age = parsed.toInt());
+                          }
+                        }
+                      ),
                     ),
                     _buildStep(
-                      title: "Quel est votre poids ?",
-                      child: _buildSlider(weight, 40, 160, "kg", (val) => setState(() => weight = double.parse(val.toStringAsFixed(1)))),
+                      title: "Quel est votre poids actuel ?",
+                      subtitle: "Soyez honnête, c'est le point de départ de votre mutation.",
+                      child: _buildEditableSlider(
+                        controller: _weightController,
+                        value: weight,
+                        min: 40,
+                        max: 180,
+                        unit: "kg",
+                        isDecimal: true,
+                        onChanged: (val) => setState(() {
+                          weight = double.parse(val.toStringAsFixed(1));
+                          _weightController.text = weight.toString();
+                        }),
+                        onTextChanged: (val) {
+                          final parsed = double.tryParse(val);
+                          if (parsed != null && parsed >= 40 && parsed <= 180) {
+                            setState(() => weight = parsed);
+                          }
+                        }
+                      ),
                     ),
                     _buildStep(
                       title: "Quelle est votre taille ?",
-                      child: _buildSlider(height, 120, 220, "cm", (val) => setState(() => height = val.roundToDouble())),
+                      subtitle: "Indispensable pour calculer précisément votre IMC.",
+                      child: _buildEditableSlider(
+                        controller: _heightController,
+                        value: height,
+                        min: 120,
+                        max: 230,
+                        unit: "cm",
+                        onChanged: (val) => setState(() {
+                          height = val.roundToDouble();
+                          _heightController.text = height.toInt().toString();
+                        }),
+                        onTextChanged: (val) {
+                          final parsed = double.tryParse(val);
+                          if (parsed != null && parsed >= 120 && parsed <= 230) {
+                            setState(() => height = parsed.roundToDouble());
+                          }
+                        }
+                      ),
                     ),
                     _buildStep(
-                      title: "Votre objectif musculaire ?",
+                      title: "Cible prioritaire ?",
+                      subtitle: "Votre programme d'entraînement sera configuré sur cette zone.",
                       child: GridView.count(
                         crossAxisCount: 2,
                         shrinkWrap: true,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 2.5,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 1.6,
                         children: ['Full body', 'Pectoraux', 'Dos', 'Jambes'].map((m) => _buildGridTile(m, targetMuscle, (val) => setState(() => targetMuscle = val))).toList(),
                       ),
                     ),
@@ -139,12 +229,14 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00FF66),
                     foregroundColor: Colors.black,
+                    elevation: 4,
+                    shadowColor: const Color(0xFF00FF66).withOpacity(0.3),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: _nextStep,
                   child: Text(
-                    _currentStep == 4 ? "GÉNÉRER MON PROFIL" : "SUIVANT",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    _currentStep == 4 ? "GÉNÉRER MON COMPTE" : "CONTINUER",
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1),
                   ),
                 ),
               ),
@@ -155,13 +247,15 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     );
   }
 
-  Widget _buildStep({required String title, required Widget child}) {
+  Widget _buildStep({required String title, required String subtitle, required Widget child}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-        const SizedBox(height: 30),
-        Expanded(child: SingleChildScrollView(child: child)),
+        Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5)),
+        const SizedBox(height: 8),
+        Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.white38)),
+        const SizedBox(height: 35),
+        Expanded(child: SingleChildScrollView(physics: const BouncingScrollPhysics(), child: child)),
       ],
     );
   }
@@ -170,19 +264,24 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     final bool isSelected = value == groupValue;
     return GestureDetector(
       onTap: () => onChanged(value),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(18),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0x1A00FF66) : const Color(0xFF121824),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? const Color(0xFF00FF66) : Colors.white10),
+          color: isSelected ? const Color(0x0F00FF66) : const Color(0xFF0F1522),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? const Color(0xFF00FF66) : Colors.white.withOpacity(0.03), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(value, style: TextStyle(fontSize: 18, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-            Icon(isSelected ? Icons.check_circle : Icons.radio_button_off, color: isSelected ? const Color(0xFF00FF66) : Colors.white30),
+            Text(value, style: TextStyle(fontSize: 18, fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500, color: isSelected ? const Color(0xFF00FF66) : Colors.white)),
+            AnimatedScale(
+              scale: isSelected ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded, color: isSelected ? const Color(0xFF00FF66) : Colors.white24),
+            ),
           ],
         ),
       ),
@@ -193,40 +292,93 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     final bool isSelected = value == groupValue;
     return GestureDetector(
       onTap: () => onChanged(value),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
         alignment: Alignment.center,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0x1A00FF66) : const Color(0xFF121824),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? const Color(0xFF00FF66) : Colors.white10),
+          color: isSelected ? const Color(0x0F00FF66) : const Color(0xFF0F1522),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? const Color(0xFF00FF66) : Colors.white.withOpacity(0.03), width: 1.5),
         ),
-        child: Text(value, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? const Color(0xFF00FF66) : Colors.white)),
+        child: Text(
+          value,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500, 
+            color: isSelected ? const Color(0xFF00FF66) : Colors.white
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildSlider(double value, double min, double max, String unit, ValueChanged<double> onChanged) {
+  Widget _buildEditableSlider({
+    required TextEditingController controller,
+    required double value,
+    required double min,
+    required double max,
+    required String unit,
+    required ValueChanged<double> onChanged,
+    required ValueChanged<String> onTextChanged,
+    bool isDecimal = false,
+  }) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(value.toString(), style: const TextStyle(fontSize: 54, fontWeight: FontWeight.bold, color: Color(0xFF00FF66))),
-            const SizedBox(width: 8),
-            Text(unit, style: const TextStyle(fontSize: 20, color: Colors.white54)),
-          ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F1522),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.02)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              IntrinsicWidth(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.numberWithOptions(decimal: isDecimal),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  onChanged: onTextChanged,
+                  style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: Color(0xFF00FF66), letterSpacing: -1),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(unit, style: const TextStyle(fontSize: 18, color: Colors.white38, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
-        const SizedBox(height: 30),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          activeColor: const Color(0xFF00FF66),
-          inactiveColor: Colors.white12,
-          onChanged: onChanged,
+        const SizedBox(height: 40),
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 6,
+            activeTrackColor: const Color(0xFF00FF66),
+            inactiveTrackColor: Colors.white.withOpacity(0.05),
+            thumbColor: Colors.white,
+            overlayColor: const Color(0xFF00FF66).withOpacity(0.15),
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12, pressedThumbRadius: 15),
+          ),
+          child: Slider(
+            value: value.clamp(min, max),
+            min: min,
+            max: max,
+            onChanged: onChanged,
+          ),
         ),
+        const SizedBox(height: 10),
+        Text("Appuyez sur le chiffre pour l'éditer manuellement", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.2))),
       ],
     );
   }
@@ -259,25 +411,35 @@ class _VipFitHomeState extends State<VipFitHome> {
         },
       ),
       WeeklyProgramPage(water: waterDrunk, sportDuration: sportDuration, sleep: sleepHours),
-      const PlaceholderPage(title: "Séances", icon: Icons.fitness_center),
-      const PlaceholderPage(title: "Profil", icon: Icons.person),
+      const WorkoutsPage(),
+      const ProfilePage(),
     ];
 
     return Scaffold(
-      body: pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor: const Color(0xFF080B10),
-        selectedItemColor: const Color(0xFF00FF66),
-        unselectedItemColor: Colors.white38,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.flash_on), label: 'Activités'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_view_week), label: 'Programme'),
-          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Séances'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-        ],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: pages[_currentIndex],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.02), width: 1)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+          backgroundColor: const Color(0xFF06090E),
+          selectedItemColor: const Color(0xFF00FF66),
+          unselectedItemColor: Colors.white24,
+          fontSize: 11,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.bolt_rounded), label: 'ÉNERGIE'),
+            BottomNavigationBarItem(icon: Icon(Icons.track_changes_rounded), label: 'CIBLES'),
+            BottomNavigationBarItem(icon: Icon(Icons.fitness_center_rounded), label: 'SEANCES'),
+            BottomNavigationBarItem(icon: Icon(Icons.analytics_rounded), label: 'PROFIL'),
+          ],
+        ),
       ),
     );
   }
@@ -293,7 +455,12 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final double weight = LocalStorage.get('weight') ?? 70.0;
     final double height = LocalStorage.get('height') ?? 175.0;
+    final String target = LocalStorage.get('targetMuscle') ?? 'Full Body';
     final double bmi = weight / ((height / 100) * (height / 100));
+
+    String motivationPhrase = "Le succès n'est pas une option, forgeons ce physique.";
+    if (target == 'Pectoraux') motivationPhrase = "Focus sur la puissance brute du buste aujourd'hui.";
+    if (bmi > 25) motivationPhrase = "Cardio haute intensité requis. On brûle tout.";
 
     return SafeArea(
       child: Padding(
@@ -301,16 +468,31 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("VIPFIT", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00FF66), letterSpacing: 2)),
-            const SizedBox(height: 20),
-            const Text("Bonjour Boss, prêt ?", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("VIPFIT", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF00FF66), letterSpacing: 3)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0x1F00FF66), borderRadius: BorderRadius.circular(20)),
+                  child: const Text("PRO MEMBER", style: TextStyle(color: Color(0xFF00FF66), fontSize: 10, fontWeight: FontWeight.bold)),
+                )
+              ],
+            ),
+            const SizedBox(height: 35),
+            const Text("Gagnez votre journée", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+            const SizedBox(height: 6),
+            Text(motivationPhrase, style: const TextStyle(fontSize: 14, color: Colors.white38)),
+            const SizedBox(height: 30),
+            
+            // Panneau IMC Premium
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF121824),
+                color: const Color(0xFF0F1522),
                 borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withOpacity(0.02)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -318,29 +500,50 @@ class DashboardPage extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("VOTRE IMC ACTUEL", style: TextStyle(color: Colors.white54, fontSize: 12)),
-                      const SizedBox(height: 6),
-                      Text(bmi.toStringAsFixed(1), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold)),
+                      const Text("VOTRE INDICE MASSE CORPORELLE", style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                      const SizedBox(height: 8),
+                      Text(bmi.toStringAsFixed(1), style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: -1)),
                     ],
                   ),
-                  Text(bmi > 25 ? "Surpoids" : bmi < 18.5 ? "Maigreur" : "Normal", style: const TextStyle(color: Color(0xFF00FF66), fontWeight: FontWeight.bold)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: bmi > 25 ? Colors.orange.withOpacity(0.1) : const Color(0x0F00FF66),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      bmi > 25 ? "Surpoids" : bmi < 18.5 ? "Maigreur" : "Athlétique", 
+                      style: TextStyle(color: bmi > 25 ? Colors.orange : const Color(0xFF00FF66), fontWeight: FontWeight.black, fontSize: 13)
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 35),
+            
+            // Bouton Action de suivi
             InkWell(
               onTap: () => _showAssessmentModal(context),
+              borderRadius: BorderRadius.circular(24),
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF00FF66)),
-                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(colors: [Color(0xFF0F1522), Color(0xFF090D15)]),
+                  border: Border.all(color: const Color(0xFF00FF66).withOpacity(0.4)),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: const Color(0xFF00FF66).withOpacity(0.05), blurRadius: 15)],
                 ),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Calculer ma journée", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Icon(Icons.chevron_right, color: Color(0xFF00FF66)),
+                    Row(
+                      children: [
+                        Icon(Icons.add_moderator_rounded, color: Color(0xFF00FF66), size: 28),
+                        SizedBox(width: 16),
+                        Text("Enregistrer mes data du jour", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                    Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
                   ],
                 ),
               ),
@@ -359,31 +562,37 @@ class DashboardPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0E131F),
+      backgroundColor: const Color(0xFF0B0E14),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
-              padding: EdgeInsets.only(top: 24, left: 24, right: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
+              padding: EdgeInsets.only(top: 30, left: 24, right: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 30),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Bilan du Jour", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  _buildModalSlider("Eau : ${tempWater.toStringAsFixed(1)} L", tempWater, 0, 5, (v) => setModalState(() => tempWater = v)),
-                  _buildModalSlider("Sport : $tempDuration min", tempDuration.toDouble(), 0, 180, (v) => setModalState(() => tempDuration = v.toInt())),
-                  _buildModalSlider("Sommeil : $tempSleep h", tempSleep.toDouble(), 3, 12, (v) => setModalState(() => tempSleep = v.toInt())),
-                  const SizedBox(height: 20),
+                  const Text("Mettre à jour mes métriques", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 25),
+                  _buildModalSlider("Consommation d'eau", tempWater, 0, 5, "L", (v) => setModalState(() => tempWater = v)),
+                  _buildModalSlider("Activité physique", tempDuration.toDouble(), 0, 180, "min", (v) => setModalState(() => tempDuration = v.toInt())),
+                  _buildModalSlider("Sommeil récupérateur", tempSleep.toDouble(), 3, 12, "heures", (v) => setModalState(() => tempSleep = v.toInt())),
+                  const SizedBox(height: 25),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 56,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF66), foregroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00FF66), 
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
                       onPressed: () {
                         onAssessmentCompleted(tempWater, tempDuration, tempSleep);
                         Navigator.pop(context);
                       },
-                      child: const Text("METTRE À JOUR"),
+                      child: const Text("SAUVEGARDER LES DATA", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                     ),
                   )
                 ],
@@ -395,13 +604,22 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildModalSlider(String title, double current, double min, double max, ValueChanged<double> onChange) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title),
-        Slider(value: current, min: min, max: max, activeColor: const Color(0xFF00FF66), onChanged: onChange),
-      ],
+  Widget _buildModalSlider(String title, double current, double min, double max, String unit, ValueChanged<double> onChange) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70)),
+              Text("${current is int ? current : current.toStringAsFixed(1)} $unit", style: const TextStyle(color: Color(0xFF00FF66), fontWeight: FontWeight.bold)),
+            ],
+          ),
+          Slider(value: current, min: min, max: max, activeColor: const Color(0xFF00FF66), onChanged: onChange),
+        ],
+      ),
     );
   }
 }
@@ -420,7 +638,7 @@ class WeeklyProgramPage extends StatelessWidget {
     final double height = LocalStorage.get('height') ?? 175.0;
     final double bmi = weight / ((height / 100) * (height / 100));
 
-    double targetWater = bmi > 25.0 ? 3.0 : 2.2;
+    double targetWater = bmi > 25.0 ? 3.5 : 2.5;
     int targetSleep = bmi < 18.5 ? 9 : 8;
 
     return SafeArea(
@@ -429,14 +647,18 @@ class WeeklyProgramPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Votre programme", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
+            const Text("Vos objectifs de santé", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+            const SizedBox(height: 4),
+            const Text("Atteignez vos quotas pour valider le statut élite.", style: TextStyle(fontSize: 14, color: Colors.white38)),
+            const SizedBox(height: 30),
             Expanded(
               child: ListView(
                 children: [
-                  _card(Icons.water_drop, "Hydratation", "Objectif : $targetWater L/jour", water >= targetWater),
-                  const SizedBox(height: 12),
-                  _card(Icons.bed, "Sommeil", "Objectif : $targetSleep h/nuit", sleep >= targetSleep),
+                  _card(Icons.water_drop_rounded, "Hydratation", "Actuel: ${water.toStringAsFixed(1)}L / Cible: $targetWater L", water >= targetWater),
+                  const SizedBox(height: 16),
+                  _card(Icons.dark_mode_rounded, "Sommeil", "Actuel: ${sleep}h / Cible: $targetSleep h", sleep >= targetSleep),
+                  const SizedBox(height: 16),
+                  _card(Icons.fitness_center_rounded, "Workout Quotidien", "Actuel: ${sportDuration}min / Cible: 45 min", sportDuration >= 45),
                 ],
               ),
             )
@@ -447,18 +669,31 @@ class WeeklyProgramPage extends StatelessWidget {
   }
 
   Widget _card(IconData icon, String title, String subtitle, bool isOk) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF121824), borderRadius: BorderRadius.circular(16)),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1522), 
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isOk ? const Color(0xFF00FF66).withOpacity(0.2) : Colors.white.withOpacity(0.02)),
+      ),
       child: Row(
         children: [
-          Icon(icon, color: isOk ? const Color(0xFF00FF66) : Colors.orange),
-          const SizedBox(width: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isOk ? const Color(0x1F00FF66) : Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14)
+            ),
+            child: Icon(icon, color: isOk ? const Color(0xFF00FF66) : Colors.orange, size: 24),
+          ),
+          const SizedBox(width: 20),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(subtitle, style: const TextStyle(color: Colors.white54)),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              const SizedBox(height: 4),
+              Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 13)),
             ],
           )
         ],
@@ -467,13 +702,137 @@ class WeeklyProgramPage extends StatelessWidget {
   }
 }
 
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  const PlaceholderPage({super.key, required this.title, required this.icon});
+/// --- VRAIE VIEW: SÉANCES D'ENTRAÎNEMENT ---
+class WorkoutsPage extends StatelessWidget {
+  const WorkoutsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 40, color: Colors.white24), Text(title)]));
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Programmes d'élite", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+            const SizedBox(height: 4),
+            const Text("Sélectionnez votre routine d'assaut.", style: TextStyle(fontSize: 14, color: Colors.white38)),
+            const SizedBox(height: 30),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  _workoutTile("Destruction Pectorale", "Intensité Maximale • 50 min", "Lourds développés couchés & écartés", "HARDCORE"),
+                  _workoutTile("Conditioning Full Body", "Brûleur de graisse • 35 min", "HIIT intense sans matériel", "CARDIO"),
+                  _workoutTile("Dos de Titan", "Volume Supérieur • 45 min", "Tractions lestées & rowing", "STRENGTH"),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _workoutTile(String title, String details, String desc, String tag) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1522),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.02)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+                child: Text(tag, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF00E5FF))),
+              ),
+              const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF00FF66), size: 32),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          Text(details, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Text(desc, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+/// --- VRAIE VIEW: PROFIL UTILISATEUR & MODIFICATION ---
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final int age = LocalStorage.get('age') ?? 22;
+    final double weight = LocalStorage.get('weight') ?? 70.0;
+    final double height = LocalStorage.get('height') ?? 175.0;
+    final String target = LocalStorage.get('targetMuscle') ?? 'Full Body';
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Votre Centre de Commande", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+            const SizedBox(height: 30),
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(colors: [Color(0xFF00FF66), Color(0xFF00E5FF)]),
+                      boxShadow: [BoxShadow(color: const Color(0xFF00FF66).withOpacity(0.2), blurRadius: 20)],
+                    ),
+                    child: const Icon(Icons.person_rounded, size: 50, color: Colors.black),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text("BOSS VIPFIT", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  const Text("Statut: Déterminé", style: TextStyle(color: Color(0xFF00FF66), fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+            _profileRow("Objectif actuel", target),
+            _profileRow("Poids enregistré", "$weight kg"),
+            _profileRow("Taille", "${height.toInt()} cm"),
+            _profileRow("Âge", "$age ans"),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _profileRow(String label, String val) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1522),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.w500)),
+          Text(val, style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 16)),
+        ],
+      ),
+    );
   }
 }
