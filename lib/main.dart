@@ -5,8 +5,6 @@ void main() {
   runApp(const VipFitApp());
 }
 
-
-
 class VipFitApp extends StatelessWidget {
   const VipFitApp({super.key});
 
@@ -77,15 +75,16 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
         curve: Curves.fastOutSlowIn,
       );
     } else {
-      LocalStorage.save('age', age);
-      LocalStorage.save('sex', sex);
-      LocalStorage.save('weight', weight);
-      LocalStorage.save('height', height);
-      LocalStorage.save('targetMuscle', targetMuscle);
-
+      // Les données collectées sont directement passées au constructeur de la Home
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const VipFitHome(),
+          pageBuilder: (_, __, ___) => VipFitHome(
+            sex: sex,
+            age: age,
+            weight: weight,
+            height: height,
+            targetMuscle: targetMuscle,
+          ),
           transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 500),
         ),
@@ -102,7 +101,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Indicateur Premium de progression
               Row(
                 children: List.generate(5, (index) => Expanded(
                   child: AnimatedContainer(
@@ -144,7 +142,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                         onChanged: (val) {
                           setState(() {
                             age = val.toInt();
-                            // Évite de réinitialiser le curseur pendant la frappe
                             if (!_ageController.hasFocus) {
                               _ageController.text = age.toString();
                             }
@@ -350,7 +347,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-                width: 110, // Largeur fixe sécurisée pour éviter les crashs d'overflow
+                width: 110, 
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.numberWithOptions(decimal: isDecimal),
@@ -388,7 +385,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
             max: max,
             onChanged: (val) {
               onChanged(val);
-              // Met à jour dynamiquement le texte du champ UNIQUEMENT si l'utilisateur utilise le slider
               if (!controller.hasFocus) {
                 controller.text = isDecimal ? val.toStringAsFixed(1) : val.toInt().toString();
               }
@@ -404,7 +400,20 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
 
 /// --- INTERFACE PRINCIPALE ---
 class VipFitHome extends StatefulWidget {
-  const VipFitHome({super.key});
+  final String sex;
+  final int age;
+  final double weight;
+  final double height;
+  final String targetMuscle;
+
+  const VipFitHome({
+    super.key,
+    required this.sex,
+    required this.age,
+    required this.weight,
+    required this.height,
+    required this.targetMuscle,
+  });
 
   @override
   State<VipFitHome> createState() => _VipFitHomeState();
@@ -420,6 +429,9 @@ class _VipFitHomeState extends State<VipFitHome> {
   Widget build(BuildContext context) {
     final pages = [
       DashboardPage(
+        weight: widget.weight,
+        height: widget.height,
+        targetMuscle: widget.targetMuscle,
         onAssessmentCompleted: (water, duration, sleep) {
           setState(() {
             waterDrunk = water;
@@ -428,9 +440,20 @@ class _VipFitHomeState extends State<VipFitHome> {
           });
         },
       ),
-      WeeklyProgramPage(water: waterDrunk, sportDuration: sportDuration, sleep: sleepHours),
+      WeeklyProgramPage(
+        weight: widget.weight,
+        height: widget.height,
+        water: waterDrunk, 
+        sportDuration: sportDuration, 
+        sleep: sleepHours
+      ),
       const WorkoutsPage(),
-      const ProfilePage(),
+      ProfilePage(
+        age: widget.age,
+        weight: widget.weight,
+        height: widget.height,
+        targetMuscle: widget.targetMuscle,
+      ),
     ];
 
     return Scaffold(
@@ -465,19 +488,25 @@ class _VipFitHomeState extends State<VipFitHome> {
 
 /// --- TABLEAU DE BORD ---
 class DashboardPage extends StatelessWidget {
+  final double weight;
+  final double height;
+  final String targetMuscle;
   final Function(double, int, int) onAssessmentCompleted;
 
-  const DashboardPage({super.key, required this.onAssessmentCompleted});
+  const DashboardPage({
+    super.key, 
+    required this.weight,
+    required this.height,
+    required this.targetMuscle,
+    required this.onAssessmentCompleted
+  });
 
   @override
   Widget build(BuildContext context) {
-    final double weight = LocalStorage.get('weight') ?? 70.0;
-    final double height = LocalStorage.get('height') ?? 175.0;
-    final String target = LocalStorage.get('targetMuscle') ?? 'Full Body';
     final double bmi = weight / ((height / 100) * (height / 100));
 
     String motivationPhrase = "Le succès n'est pas une option, forgeons ce physique.";
-    if (target == 'Pectoraux') motivationPhrase = "Focus sur la puissance brute du buste aujourd'hui.";
+    if (targetMuscle == 'Pectoraux') motivationPhrase = "Focus sur la puissance brute du buste aujourd'hui.";
     if (bmi > 25) motivationPhrase = "Cardio haute intensité requis. On brûle tout.";
 
     return SafeArea(
@@ -503,7 +532,6 @@ class DashboardPage extends StatelessWidget {
             Text(motivationPhrase, style: const TextStyle(fontSize: 14, color: Colors.white38)),
             const SizedBox(height: 30),
             
-            // Panneau IMC Premium
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -539,7 +567,6 @@ class DashboardPage extends StatelessWidget {
             ),
             const SizedBox(height: 35),
             
-            // Bouton Action de suivi
             InkWell(
               onTap: () => _showAssessmentModal(context),
               borderRadius: BorderRadius.circular(24),
@@ -644,16 +671,23 @@ class DashboardPage extends StatelessWidget {
 
 /// --- PROGRAMME DE LA SEMAINE ---
 class WeeklyProgramPage extends StatelessWidget {
+  final double weight;
+  final double height;
   final double water;
   final int sportDuration;
   final int sleep;
 
-  const WeeklyProgramPage({super.key, required this.water, required this.sportDuration, required this.sleep});
+  const WeeklyProgramPage({
+    super.key, 
+    required this.weight,
+    required this.height,
+    required this.water, 
+    required this.sportDuration, 
+    required this.sleep
+  });
 
   @override
   Widget build(BuildContext context) {
-    final double weight = LocalStorage.get('weight') ?? 70.0;
-    final double height = LocalStorage.get('height') ?? 175.0;
     final double bmi = weight / ((height / 100) * (height / 100));
 
     double targetWater = bmi > 25.0 ? 3.5 : 2.5;
@@ -789,15 +823,21 @@ class WorkoutsPage extends StatelessWidget {
 
 /// --- VRAIE VIEW: PROFIL UTILISATEUR & MODIFICATION ---
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  final int age;
+  final double weight;
+  final double height;
+  final String targetMuscle;
+
+  const ProfilePage({
+    super.key,
+    required this.age,
+    required this.weight,
+    required this.height,
+    required this.targetMuscle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final int age = LocalStorage.get('age') ?? 22;
-    final double weight = LocalStorage.get('weight') ?? 70.0;
-    final double height = LocalStorage.get('height') ?? 175.0;
-    final String target = LocalStorage.get('targetMuscle') ?? 'Full Body';
-
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -826,7 +866,7 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
-            _profileRow("Objectif actuel", target),
+            _profileRow("Objectif actuel", targetMuscle),
             _profileRow("Poids enregistré", "$weight kg"),
             _profileRow("Taille", "${height.toInt()} cm"),
             _profileRow("Âge", "$age ans"),
