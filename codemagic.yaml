@@ -31,9 +31,9 @@ workflows:
 
       - name: 3. Compiler la version iOS (Sans signature forcée)
         script: |
-          echo "Compilation en cours... (Contournement des restrictions Apple)"
-          # On injecte des arguments directement à Xcode pour désactiver totalement l'obligation d'une Team ID
-          flutter build ios --release --no-codesign -- xcargs "CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=\"\""
+          echo "Compilation en cours... (Bypass Team ID)"
+          # Correction ici : attachement direct de --xcargs sans espace pour éviter l'erreur de target file
+          flutter build ios --release --no-codesign --xcargs="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO"
 
       - name: 4. Créer le fichier .ipa
         script: |
