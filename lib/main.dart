@@ -16,7 +16,7 @@ class VipFitApp extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF06090E),
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF00FF66), 
+          primary: Color(0xFF00FF66),
           secondary: Color(0xFF00E5FF),
           surface: Color(0xFF0F1522),
         ),
@@ -164,7 +164,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                           setState(() {
                             weight = double.parse(val.toStringAsFixed(1));
                             if (!_weightController.hasFocus) {
-                              _weightController.text = weight.toString();
+                              _weightController.text = weight.toStringAsFixed(1);
                             }
                           });
                         },
@@ -213,6 +213,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                       child: GridView.count(
                         crossAxisCount: 2,
                         shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(), // Empêche les conflits de scroll avec SingleChildScrollView
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                         childAspectRatio: 1.6,
@@ -301,7 +302,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 16,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500, 
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
             color: isSelected ? const Color(0xFF00FF66) : Colors.white
           ),
         ),
@@ -334,7 +335,7 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-                width: 110, 
+                width: 110,
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.numberWithOptions(decimal: isDecimal),
@@ -426,8 +427,8 @@ class _VipFitHomeState extends State<VipFitHome> {
       WeeklyProgramPage(
         weight: widget.weight,
         height: widget.height,
-        water: waterDrunk, 
-        sportDuration: sportDuration, 
+        water: waterDrunk,
+        sportDuration: sportDuration,
         sleep: sleepHours
       ),
       const WorkoutsPage(),
@@ -473,7 +474,7 @@ class DashboardPage extends StatelessWidget {
   final Function(double, int, int) onAssessmentCompleted;
 
   const DashboardPage({
-    super.key, 
+    super.key,
     required this.weight,
     required this.height,
     required this.targetMuscle,
@@ -482,7 +483,9 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double bmi = weight / ((height / 100) * (height / 100));
+    // Sécurité anti division par zéro (même si bloqué à 120cm min dans l'UI)
+    final safeHeight = height > 0 ? height : 1.0;
+    final double bmi = weight / ((safeHeight / 100) * (safeHeight / 100));
 
     String motivationPhrase = "Le succès n'est pas une option, forgeons ce physique.";
     if (targetMuscle == 'Pectoraux') motivationPhrase = "Focus sur la puissance brute du buste aujourd'hui.";
@@ -510,7 +513,7 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 6),
             Text(motivationPhrase, style: const TextStyle(fontSize: 14, color: Colors.white38)),
             const SizedBox(height: 30),
-            
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -537,7 +540,7 @@ class DashboardPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      bmi > 25 ? "Surpoids" : bmi < 18.5 ? "Maigreur" : "Athlétique", 
+                      bmi > 25 ? "Surpoids" : bmi < 18.5 ? "Maigreur" : "Athlétique",
                       style: TextStyle(color: bmi > 25 ? Colors.orange : const Color(0xFF00FF66), fontWeight: FontWeight.black, fontSize: 13)
                     ),
                   ),
@@ -545,7 +548,7 @@ class DashboardPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 35),
-            
+
             InkWell(
               onTap: () => _showAssessmentModal(context),
               borderRadius: BorderRadius.circular(24),
@@ -558,15 +561,15 @@ class DashboardPage extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                  children: const [
                     Row(
-                      children: const [ // <-- LE FIX EST ICI : Plus de const global sur la ligne
+                      children: [
                         Icon(Icons.add_moderator_rounded, color: Color(0xFF00FF66), size: 28),
                         SizedBox(width: 16),
                         Text("Enregistrer mes data du jour", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                       ],
                     ),
-                    const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
+                    Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
                   ],
                 ),
               ),
@@ -607,7 +610,7 @@ class DashboardPage extends StatelessWidget {
                     height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00FF66), 
+                        backgroundColor: const Color(0xFF00FF66),
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
@@ -638,7 +641,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70)),
               Text(
-                forceInteger ? "${current.toInt()} $unit" : "${current.toStringAsFixed(1)} $unit", 
+                forceInteger ? "${current.toInt()} $unit" : "${current.toStringAsFixed(1)} $unit",
                 style: const TextStyle(color: Color(0xFF00FF66), fontWeight: FontWeight.bold)
               ),
             ],
@@ -658,17 +661,18 @@ class WeeklyProgramPage extends StatelessWidget {
   final int sleep;
 
   const WeeklyProgramPage({
-    super.key, 
+    super.key,
     required this.weight,
     required this.height,
-    required this.water, 
-    required this.sportDuration, 
+    required this.water,
+    required this.sportDuration,
     required this.sleep
   });
 
   @override
   Widget build(BuildContext context) {
-    final double bmi = weight / ((height / 100) * (height / 100));
+    final safeHeight = height > 0 ? height : 1.0;
+    final double bmi = weight / ((safeHeight / 100) * (safeHeight / 100));
 
     double targetWater = bmi > 25.0 ? 3.5 : 2.5;
     int targetSleep = bmi < 18.5 ? 9 : 8;
@@ -685,6 +689,7 @@ class WeeklyProgramPage extends StatelessWidget {
             const SizedBox(height: 30),
             Expanded(
               child: ListView(
+                physics: const BouncingScrollPhysics(),
                 children: [
                   _card(Icons.water_drop_rounded, "Hydratation", "Actuel: ${water.toStringAsFixed(1)}L / Cible: $targetWater L", water >= targetWater),
                   const SizedBox(height: 16),
@@ -705,7 +710,7 @@ class WeeklyProgramPage extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F1522), 
+        color: const Color(0xFF0F1522),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: isOk ? const Color(0xFF00FF66).withOpacity(0.2) : Colors.white.withOpacity(0.02)),
       ),
