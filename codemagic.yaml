@@ -36,12 +36,12 @@ workflows:
           # Ajouter un xcconfig global
           mkdir -p ios/Flutter
           cat <<EOF > ios/Flutter/NoSign.xcconfig
-CODE_SIGNING_ALLOWED=NO
-CODE_SIGNING_REQUIRED=NO
-CODE_SIGN_IDENTITY=
-DEVELOPMENT_TEAM=
-PROVISIONING_PROFILE_SPECIFIER=
-EOF
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGN_IDENTITY=
+          DEVELOPMENT_TEAM=
+          PROVISIONING_PROFILE_SPECIFIER=
+          EOF
 
           echo '#include "NoSign.xcconfig"' >> ios/Flutter/Debug.xcconfig
           echo '#include "NoSign.xcconfig"' >> ios/Flutter/Release.xcconfig
