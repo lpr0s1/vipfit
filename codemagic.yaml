@@ -7,70 +7,74 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
-      - name: 1. Générer l'arborescence iOS de zero
+      - name: 1. Créer la structure de base sans fioritures
         script: |
-          echo "Dossier iOS absent. Generation complete..."
-          flutter create . --project-name vipfit --org com.hx --platforms ios
-          
-          # Petite pause pour être sûr que la machine virtuelle a fini d'écrire les fichiers
+          echo "Génération des fichiers natifs indispensables..."
+          flutter create . --project-name vipfit --org com.apple.test --platforms ios
           sleep 2
-          
-      - name: 2. Forçage et contournement Xcode (Anti-Development Team)
-        script: |
-          echo "Application des patchs directement dans le projet fraîchement généré..."
-          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
-          
-          if [ -f "$PBXPROJ" ]; then
-            # On change le Bundle ID pour utiliser un identifiant de test Apple (esquive la signature)
-            sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = "com.apple.test.vipfit";/g' "$PBXPROJ"
-            
-            # On vide de force toutes les variables de Team de développement
-            sed -i '' 's/DevelopmentTeam = .*/DevelopmentTeam = "";/g' "$PBXPROJ"
-            sed -i '' 's/DEVELOPMENT_TEAM = .*/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
-            
-            # On force Xcode à accepter de ne pas signer
-            sed -i '' 's/CODE_SIGN_STYLE = .*/CODE_SIGN_STYLE = Manual;/g' "$PBXPROJ"
-            sed -i '' 's/CODE_SIGN_IDENTITY = .*/CODE_SIGN_IDENTITY = "";/g' "$PBXPROJ"
-            sed -i '' 's/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = .*/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' "$PBXPROJ"
-            
-            echo "Le projet Xcode a ete neutraliser avec succes."
-          else
-            echo "ERREUR CRITIQUE : Le dossier ios ou le projet n'a pas été créé par Flutter."
-            exit 1
-          fi
 
-          # Suppression d eventuels droits bloquants
-          rm -f ios/Runner/Runner.entitlements 2>/dev/null || true
-
-      - name: 3. Télécharger les dépendances
+      - name: 2. Installer les packages
         script: |
           flutter pub get
 
-      - name: 4. Compiler la version iOS (Mode Sans Signature)
+      - name: 3. Forcer le moteur Flutter à compiler le code Dart (Sans Xcode)
         script: |
-          echo "Injection finale des règles de non-signature..."
-          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
-          echo "DEVELOPMENT_TEAM=" >> ios/Flutter/Release.xcconfig
+          echo "Compilation du code Dart en binaire natif ARM64..."
+          # Cette commande magique compile le code d'une manière que Xcode ne peut pas bloquer
+          flutter build aot --release --target-platform ios --ios-arch arm64
 
-          echo "Compilation en cours..."
-          flutter build ios --debug --no-codesign
-
-      - name: 5. Créer l'IPA pour Sideloadly
+      - name: 4. Neutraliser Xcode à la racine (Remplacement des variables globales)
         script: |
-          echo "Creation du Payload..."
+          echo "Éradication totale du besoin de signature dans l'environnement Mac..."
+          
+          # On injecte les flags directement dans TOUS les fichiers de configuration possibles
+          for file in ios/Flutter/*.xcconfig; do
+            echo "" >> "$file"
+            echo "CODE_SIGNING_ALLOWED = NO" >> "$file"
+            echo "CODE_SIGNING_REQUIRED = NO" >> "$file"
+            echo "CODE_SIGN_IDENTITY = " >> "$file"
+            echo "DEVELOPMENT_TEAM = " >> "$file"
+            echo "PROVISIONING_PROFILE_SPECIFIER = " >> "$file"
+          done
+
+          # On désactive la signature automatique dans le pbxproj de manière radicale
+          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
+          sed -i '' 's/CODE_SIGN_STYLE = .*/CODE_SIGN_STYLE = Manual;/g' "$PBXPROJ"
+          sed -i '' 's/DevelopmentTeam = .*/DevelopmentTeam = "";/g' "$PBXPROJ"
+          sed -i '' 's/DEVELOPMENT_TEAM = .*/DEVELOPMENT_TEAM = "";/g' "$PBXPROJ"
+
+      - name: 5. Lancer Xcode en mode "Archive Seule" (Ligne de commande pure)
+        script: |
+          echo "Lancement de xcodebuild en mode force brute..."
+          cd ios
+          
+          # On utilise xcodebuild DIRECTEMENT sans passer par Flutter, en lui interdisant de signer
+          xcodebuild -workspace Runner.xcworkspace \
+                     -scheme Runner \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     -allowProvisioningUpdates NO \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGN_IDENTITY="" \
+                     DEVELOPMENT_TEAM="" \
+                     PROVISIONING_PROFILE_SPECIFIER="" \
+                     GENERATED_PKGINFO_FILE="" \
+                     COMPILER_INDEX_STORE_ENABLE=NO \
+                     clean build
+
+      - name: 6. Fabriquer l'IPA pour Sideloadly
+        script: |
+          echo "Création du package final pour ton iPhone..."
           mkdir -p build/ios/ipa
-          cd build/ios/iphoneos
           
-          mkdir -p Payload
-          cp -r Runner.app Payload/
+          # On récupère le fichier brut compilé directement par Xcode
+          mkdir -p build/ios/Payload
+          cp -r ios/build/Release-iphoneos/Runner.app build/ios/Payload/ 2>/dev/null || cp -r build/ios/iphoneos/Runner.app build/ios/Payload/
           
-          # Nettoyage pour Sideloadly
-          rm -rf Payload/Runner.app/Frameworks/lib_flutter_xcode.dylib 2>/dev/null || true
-          
-          zip -r -q ../ipa/vipfit.ipa Payload
-          echo "IPA prêt !"
+          cd build/ios
+          zip -r -q ipa/vipfit.ipa Payload
+          echo "L'IPA est enfin prêt pour Sideloadly !"
           
     artifacts:
       - build/ios/ipa/*.ipa
