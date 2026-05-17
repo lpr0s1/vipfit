@@ -405,9 +405,6 @@ class VipFitHome extends StatefulWidget {
 
 class _VipFitHomeState extends State<VipFitHome> {
   int _currentIndex = 0;
-  double waterDrunk = 0.0;
-  int sportDuration = 0;
-  int sleepHours = 7;
 
   @override
   Widget build(BuildContext context) {
@@ -416,20 +413,10 @@ class _VipFitHomeState extends State<VipFitHome> {
         weight: widget.weight,
         height: widget.height,
         targetMuscle: widget.targetMuscle,
-        onAssessmentCompleted: (water, duration, sleep) {
-          setState(() {
-            waterDrunk = water;
-            sportDuration = duration;
-            sleepHours = sleep;
-          });
-        },
       ),
       WeeklyProgramPage(
         weight: widget.weight,
         height: widget.height,
-        water: waterDrunk,
-        sportDuration: sportDuration,
-        sleep: sleepHours
       ),
       const WorkoutsPage(),
       ProfilePage(
@@ -471,14 +458,12 @@ class DashboardPage extends StatelessWidget {
   final double weight;
   final double height;
   final String targetMuscle;
-  final Function(double, int, int) onAssessmentCompleted;
 
   const DashboardPage({
     super.key,
     required this.weight,
     required this.height,
     required this.targetMuscle,
-    required this.onAssessmentCompleted
   });
 
   @override
@@ -546,107 +531,8 @@ class DashboardPage extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 35),
-
-            InkWell(
-              onTap: () => _showAssessmentModal(context),
-              borderRadius: BorderRadius.circular(24),
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF0F1522), Color(0xFF090D15)]),
-                  border: Border.all(color: const Color(0xFF00FF66).withOpacity(0.4)),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.add_moderator_rounded, color: Color(0xFF00FF66), size: 28),
-                        SizedBox(width: 16),
-                        Text("Enregistrer mes data du jour", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                      ],
-                    ),
-                    const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
-                  ],
-                ),
-              ),
-            )
           ],
         ),
-      ),
-    );
-  }
-
-  void _showAssessmentModal(BuildContext context) {
-    double tempWater = 1.5;
-    int tempDuration = 45;
-    int tempSleep = 7;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0B0E14),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(top: 30, left: 24, right: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 30),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Mettre à jour mes métriques", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 25),
-                  _buildModalSlider("Consommation d'eau", tempWater, 0, 5, "L", (v) => setModalState(() => tempWater = v)),
-                  _buildModalSlider("Activité physique", tempDuration.toDouble(), 0, 180, "min", (v) => setModalState(() => tempDuration = v.toInt()), forceInteger: true),
-                  _buildModalSlider("Sommeil récupérateur", tempSleep.toDouble(), 3, 12, "heures", (v) => setModalState(() => tempSleep = v.toInt()), forceInteger: true),
-                  const SizedBox(height: 25),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00FF66),
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      onPressed: () {
-                        onAssessmentCompleted(tempWater, tempDuration, tempSleep);
-                        Navigator.pop(context);
-                      },
-                      child: const Text("SAUVEGARDER LES DATA", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                    ),
-                  )
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildModalSlider(String title, double current, double min, double max, String unit, ValueChanged<double> onChange, {bool forceInteger = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70)),
-              Text(
-                forceInteger ? "${current.toInt()} $unit" : "${current.toStringAsFixed(1)} $unit",
-                style: const TextStyle(color: Color(0xFF00FF66), fontWeight: FontWeight.bold)
-              ),
-            ],
-          ),
-          Slider(value: current, min: min, max: max, activeColor: const Color(0xFF00FF66), onChanged: onChange),
-        ],
       ),
     );
   }
@@ -655,17 +541,11 @@ class DashboardPage extends StatelessWidget {
 class WeeklyProgramPage extends StatelessWidget {
   final double weight;
   final double height;
-  final double water;
-  final int sportDuration;
-  final int sleep;
 
   const WeeklyProgramPage({
     super.key,
     required this.weight,
     required this.height,
-    required this.water,
-    required this.sportDuration,
-    required this.sleep
   });
 
   @override
@@ -690,11 +570,11 @@ class WeeklyProgramPage extends StatelessWidget {
               child: ListView(
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  _card(Icons.water_drop_rounded, "Hydratation", "Actuel: ${water.toStringAsFixed(1)}L / Cible: $targetWater L", water >= targetWater),
+                  _card(Icons.water_drop_rounded, "Hydratation", "Cible recommandée : $targetWater L / jour"),
                   const SizedBox(height: 16),
-                  _card(Icons.dark_mode_rounded, "Sommeil", "Actuel: ${sleep}h / Cible: $targetSleep h", sleep >= targetSleep),
+                  _card(Icons.dark_mode_rounded, "Sommeil", "Cible recommandée : $targetSleep h / nuit"),
                   const SizedBox(height: 16),
-                  _card(Icons.fitness_center_rounded, "Workout Quotidien", "Actuel: ${sportDuration}min / Cible: 45 min", sportDuration >= 45),
+                  _card(Icons.fitness_center_rounded, "Workout Quotidien", "Cible recommandée : 45 min / jour"),
                 ],
               ),
             )
@@ -704,24 +584,23 @@ class WeeklyProgramPage extends StatelessWidget {
     );
   }
 
-  Widget _card(IconData icon, String title, String subtitle, bool isOk) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+  Widget _card(IconData icon, String title, String subtitle) {
+    return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF0F1522),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isOk ? const Color(0xFF00FF66).withOpacity(0.2) : Colors.white.withOpacity(0.02)),
+        border: Border.all(color: Colors.white.withOpacity(0.02)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isOk ? const Color(0x1F00FF66) : Colors.orange.withOpacity(0.1),
+              color: const Color(0x1F00FF66),
               borderRadius: BorderRadius.circular(14)
             ),
-            child: Icon(icon, color: isOk ? const Color(0xFF00FF66) : Colors.orange, size: 24),
+            child: Icon(icon, color: const Color(0xFF00FF66), size: 24),
           ),
           const SizedBox(width: 20),
           Column(
