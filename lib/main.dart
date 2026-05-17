@@ -44,23 +44,8 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
   double height = 175.0;
   String targetMuscle = 'Full body';
 
-  late TextEditingController _ageController;
-  late TextEditingController _weightController;
-  late TextEditingController _heightController;
-
-  @override
-  void initState() {
-    super.initState();
-    _ageController = TextEditingController(text: age.toString());
-    _weightController = TextEditingController(text: weight.toString());
-    _heightController = TextEditingController(text: height.toInt().toString());
-  }
-
   @override
   void dispose() {
-    _ageController.dispose();
-    _weightController.dispose();
-    _heightController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -125,86 +110,37 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
                     _buildStep(
                       title: "Quel âge avez-vous ?",
                       subtitle: "Votre âge permet d'ajuster vos zones de fréquence cardiaque.",
-                      child: _buildEditableSlider(
-                        controller: _ageController,
+                      child: _buildStableSlider(
                         value: age.toDouble(),
                         min: 14,
                         max: 99,
                         unit: "ans",
-                        onChanged: (val) {
-                          setState(() {
-                            age = val.toInt();
-                            if (!_ageController.hasFocus) {
-                              _ageController.text = age.toString();
-                            }
-                          });
-                        },
-                        onTextChanged: (val) {
-                          if (val.isEmpty) return;
-                          final parsed = double.tryParse(val.replaceAll(RegExp(r'[^0-9.]'), ''));
-                          if (parsed != null) {
-                            setState(() {
-                              age = parsed.toInt().clamp(14, 99);
-                            });
-                          }
-                        }
+                        isDecimal: false,
+                        onChanged: (val) => setState(() => age = val.toInt()),
                       ),
                     ),
                     _buildStep(
                       title: "Quel est votre poids actuel ?",
                       subtitle: "Soyez honnête, c'est le point de départ de votre mutation.",
-                      child: _buildEditableSlider(
-                        controller: _weightController,
+                      child: _buildStableSlider(
                         value: weight,
                         min: 40,
                         max: 180,
                         unit: "kg",
                         isDecimal: true,
-                        onChanged: (val) {
-                          setState(() {
-                            weight = double.parse(val.toStringAsFixed(1));
-                            if (!_weightController.hasFocus) {
-                              _weightController.text = weight.toStringAsFixed(1);
-                            }
-                          });
-                        },
-                        onTextChanged: (val) {
-                          if (val.isEmpty) return;
-                          final parsed = double.tryParse(val.replaceAll(RegExp(r'[^0-9.]'), ''));
-                          if (parsed != null) {
-                            setState(() {
-                              weight = parsed.clamp(40.0, 180.0);
-                            });
-                          }
-                        }
+                        onChanged: (val) => setState(() => weight = double.parse(val.toStringAsFixed(1))),
                       ),
                     ),
                     _buildStep(
                       title: "Quelle est votre taille ?",
                       subtitle: "Indispensable pour calculer précisément votre IMC.",
-                      child: _buildEditableSlider(
-                        controller: _heightController,
+                      child: _buildStableSlider(
                         value: height,
                         min: 120,
                         max: 230,
                         unit: "cm",
-                        onChanged: (val) {
-                          setState(() {
-                            height = val.roundToDouble();
-                            if (!_heightController.hasFocus) {
-                              _heightController.text = height.toInt().toString();
-                            }
-                          });
-                        },
-                        onTextChanged: (val) {
-                          if (val.isEmpty) return;
-                          final parsed = double.tryParse(val.replaceAll(RegExp(r'[^0-9.]'), ''));
-                          if (parsed != null) {
-                            setState(() {
-                              height = parsed.roundToDouble().clamp(120.0, 230.0);
-                            });
-                          }
-                        }
+                        isDecimal: false,
+                        onChanged: (val) => setState(() => height = val.roundToDouble()),
                       ),
                     ),
                     _buildStep(
@@ -308,16 +244,15 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
     );
   }
 
-  Widget _buildEditableSlider({
-    required TextEditingController controller,
+  Widget _buildStableSlider({
     required double value,
     required double min,
     required double max,
     required String unit,
     required ValueChanged<double> onChanged,
-    required ValueChanged<String> onTextChanged,
     bool isDecimal = false,
   }) {
+    final displayValue = isDecimal ? value.toStringAsFixed(1) : value.toInt().toString();
     return Column(
       children: [
         Container(
@@ -330,22 +265,10 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 110,
-                child: TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.numberWithOptions(decimal: isDecimal),
-                  onChanged: onTextChanged,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Color(0xFF00FF66), letterSpacing: -1),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
+              Text(
+                displayValue,
+                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Color(0xFF00FF66), letterSpacing: -1),
               ),
               const SizedBox(width: 12),
               Text(unit, style: const TextStyle(fontSize: 20, color: Colors.white38, fontWeight: FontWeight.bold)),
@@ -366,16 +289,9 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
             value: value.clamp(min, max),
             min: min,
             max: max,
-            onChanged: (val) {
-              onChanged(val);
-              if (!controller.hasFocus) {
-                controller.text = isDecimal ? val.toStringAsFixed(1) : val.toInt().toString();
-              }
-            },
+            onChanged: onChanged,
           ),
         ),
-        const SizedBox(height: 10),
-        Text("Appuyez sur le chiffre pour l'éditer au clavier", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.2))),
       ],
     );
   }
