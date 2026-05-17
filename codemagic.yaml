@@ -24,11 +24,19 @@ workflows:
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-      - name: 3. Compiler la version iOS (Forçage Sideloadly)
+      - name: 3. Compiler la version iOS (Contournement total Signature & Team ID)
         script: |
-          echo "Compilation sans signature et forçage des flags Xcode..."
-          # On désactive la signature au niveau de Flutter ET on force Xcode à ignorer l'absence de Team ID
-          flutter build ios --release --no-codesign --build-name=1.0.0 --build-number=1 --xcconfig-overrides=ios/Flutter/Release.xcconfig
+          echo "Forçage des paramètres de non-signature dans la configuration Flutter..."
+          
+          # On désactive explicitement la signature dans le fichier d'override de Flutter
+          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
+          echo "PROVISIONING_PROFILE_SPECIFIER=" >> ios/Flutter/Release.xcconfig
+          echo "DEVELOPMENT_TEAM=" >> ios/Flutter/Release.xcconfig
+          
+          echo "Compilation sans signature..."
+          flutter build ios --release --no-codesign --build-name=1.0.0 --build-number=1
       - name: 4. Créer le fichier .ipa
         script: |
           echo "Empaquetage du Payload pour Sideloadly..."
