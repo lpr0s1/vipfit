@@ -75,7 +75,6 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
         curve: Curves.fastOutSlowIn,
       );
     } else {
-      // Les données collectées sont directement passées au constructeur de la Home
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => VipFitHome(
@@ -578,17 +577,17 @@ class DashboardPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [BoxShadow(color: const Color(0xFF00FF66).withOpacity(0.05), blurRadius: 15)],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
-                      children: [
+                      children: const [
                         Icon(Icons.add_moderator_rounded, color: Color(0xFF00FF66), size: 28),
                         SizedBox(width: 16),
                         Text("Enregistrer mes data du jour", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                       ],
                     ),
-                    Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
+                    const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF66), size: 16),
                   ],
                 ),
               ),
