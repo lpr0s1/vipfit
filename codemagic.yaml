@@ -1,0 +1,59 @@
+workflows:
+  vipfit_ios:
+    name: VipFit
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+
+    scripts:
+      - name: Create Flutter project
+        script: |
+          flutter create vipfit
+          cd vipfit
+
+      - name: Replace pubspec.yaml
+        script: |
+          cat > pubspec.yaml << 'EOF'
+name: vipfit
+description: Application de sport premium VipFit
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+EOF
+
+      - name: Replace main.dart
+        script: |
+          cat > lib/main.dart << 'EOF'
+          // ICI TU COLLES LE MAIN.DART COMPLET DE VIPFIT
+EOF
+
+      - name: Flutter pub get
+        script: |
+          flutter pub get
+
+      - name: Build iOS IPA
+        script: |
+          flutter build ipa --release --no-tree-shake-icons
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      email:
+        recipients:
+          - "ton-email@exemple.com"
