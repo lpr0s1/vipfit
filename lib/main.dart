@@ -77,7 +77,7 @@ class _WealthVisionState extends State<WealthVision> {
   int get projectionGains {
     int anneesRestantes = max(0, 65 - age);
     int capitalBrut = epargneAnnuelle * anneesRestantes;
-    // Ajout d'intérêts composés basiques (ex: 4% net) sur les gains du business envisagé
+    // Ajout d'intérêts composés basiques sur les gains du business envisagé
     int gainsBusinessAnnuels = analyseBusiness['gain'] * 12;
     return capitalBrut + (gainsBusinessAnnuels * anneesRestantes);
   }
@@ -204,7 +204,7 @@ class _WealthVisionState extends State<WealthVision> {
               const SizedBox(height: 28),
               Expanded(
                 child: SingleChildScrollView(
-                  child: tab == 0 ? Column( // TAB 0 : INFLATION & EPARGNE
+                  child: tab == 0 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
@@ -227,15 +227,16 @@ class _WealthVisionState extends State<WealthVision> {
                         width: double.infinity, padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(20)),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text("CAPITAL À ${max(age, 65)} ANS", style: TextStyle(color: accent, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1)),
+                          // CORRECTION : Le mot clé "const" a été supprimé du widget Text et placé uniquement sur le TextStyle.
+                          Text("CAPITAL À ${max(age, 65)} ANS", style: const TextStyle(color: accent, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1)),
                           const SizedBox(height: 8),
                           Text("$projectionGains €", style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.black)),
                           const SizedBox(height: 8),
-                          Text("Estimation basée sur une épargne constante et le lancement du business recommandé.", style: const TextStyle(color: Colors.white54, fontSize: 12, height: 1.5)),
+                          const Text("Estimation basée sur une épargne constante et le lancement du business recommandé.", style: TextStyle(color: Colors.white54, fontSize: 12, height: 1.5)),
                         ]),
                       ),
                     ],
-                  ) : tab == 1 ? Column( // TAB 1 : EXPATRIATION
+                  ) : tab == 1 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
@@ -262,7 +263,7 @@ class _WealthVisionState extends State<WealthVision> {
                         ]),
                       ),
                     ],
-                  ) : Column( // TAB 2 : BUSINESS
+                  ) : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
@@ -284,7 +285,6 @@ class _WealthVisionState extends State<WealthVision> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Navigation
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(18)),
