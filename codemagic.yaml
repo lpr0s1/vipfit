@@ -26,36 +26,22 @@ workflows:
             echo "Icône trouvée, génération des ressources iOS..."
             dart run flutter_launcher_icons
           else
-            echo "Attention : assets/app_icon.png manquant, l'icône par défaut sera utilisée."
+            echo "Attention : assets/app_icon.png manquant."
           fi
 
-      - name: 4. Compiler la version iOS (Astuce Simulateur ARM64)
+      - name: 4. Compiler en mode Simulateur sans contrainte
         script: |
-          echo "Compilation via l'astuce simulateur pour contourner Xcode..."
-          # On compile pour simulateur (zéro vérification de team) mais en forçant l'architecture ARM64 des vrais iPhone
-          flutter build ios --simulator --config-only
-          
-          echo "Lancement du build Xcode brut..."
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-                     -scheme Runner \
-                     -configuration Release \
-                     -sdk iphonesimulator \
-                     ARCHS="arm64" \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGN_IDENTITY="" \
-                     ONLY_ACTIVE_ARCH=NO \
-                     clean build
+          echo "Compilation de l'application (Zéro vérification Apple)..."
+          flutter build ios --simulator --debug
 
-      - name: 5. Créer le fichier .ipa
+      - name: 5. Créer le fichier .ipa pour Sideloadly
         script: |
-          echo "Empaquetage du Payload pour Sideloadly..."
+          echo "Empaquetage du Payload..."
           cd $CM_BUILD_DIR
           mkdir -p build/ios/ipa
           
-          # Le build atterrit dans le dossier Release-iphonesimulator
-          cd build/ios/iphonesimulator
+          # En mode debug, le fichier est généré dans 'Debug-iphonesimulator'
+          cd build/ios/Debug-iphonesimulator
           mkdir -p Payload
           mv Runner.app Payload/
           zip -r -q ../ipa/vipfit.ipa Payload
