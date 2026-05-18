@@ -1,168 +1,121 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(const MaterialApp(home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipFitTabs()))));
+void main() => runApp(const MaterialApp(home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipFitProtocol()))));
 
-class VipFitTabs extends StatefulWidget {
-  const VipFitTabs({super.key});
+class VipFitProtocol extends StatefulWidget {
+  const VipFitProtocol({super.key});
   @override
-  State<VipFitTabs> createState() => _VipFitTabsState();
+  State<VipFitProtocol> createState() => _VipFitProtocolState();
 }
 
-class _VipFitTabsState extends State<VipFitTabs> {
+class _VipFitProtocolState extends State<VipFitProtocol> {
   bool showPlan = false;
-  int currentTab = 0; // 0: Profil, 1: Hygiène, 2: Training, 3: Mental
 
-  // Les 20 variables stockées proprement dans une liste simple
-  final List<double> values = [25, 75, 175, 7, 2, 4, 4, 2, 60, 45, 4, 2, 7, 7, 8, 400, 90, 8, 7, 8];
-  String sexe = "Homme";
+  // UNIQUEMENT LES INFOS UTILES
+  double poids = 75;
+  double heureReveil = 7; // ex: 7h00
+  String niveau = "Intermédiaire";
 
-  // Calculs métaboliques
-  int get targetCalories {
-    double bmr = (10 * values[1]) + (6.25 * values[2]) - (5 * values[0]) + (sexe == "Homme" ? 5 : -161);
-    return (bmr * 1.4).toInt() + values[15].toInt();
-  }
-  int get targetProteins => (values[1] * 2.2).toInt();
+  // CALCULS DU TIMING NUTRITIONNEL VIP
+  String get tempsNoix => "${(heureReveil + 3).toInt()}h00"; // 3h après le réveil
+  String get tempsPistaches => "${(heureReveil + 9).toInt()}h00"; // Pré-repas/Pré-training après-midi
+
+  int get grammesPistaches => (poids * 0.5).toInt(); // ~35-40g calibré selon le poids
+  int get grammesNoix => (poids * 0.4).toInt(); // ~30g pour les lipides articulaires
 
   @override
   Widget build(BuildContext context) {
+    const Color vipGold = Color(0xFFD4AF37); // Or Satiné VIP
+    const Color charcoal = Color(0xFF1C1C1E); // Gris sombre premium
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       children: [
-        const Text("VIP FIT LAB", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        // HEADER PREMIUM
+        const Text("VIP FIT PROTOCOL", style: TextStyle(color: vipGold, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        const Text("SYNTHÈSE NUTRITIONNELLE ET TIMING DE PERFORMANCE", style: TextStyle(color: Colors.white30, fontSize: 9, letterSpacing: 0.5)),
         const Divider(color: Colors.white10, height: 30),
 
         if (!showPlan) ...[
-          // SÉLECTEUR D'ONGLETS ULTRA-LÉGER (Boutons simples côte à côte)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _tabBtn("PROFIL", 0),
-              _tabBtn("HYGIÈNE", 1),
-              _tabBtn("TRAINING", 2),
-              _tabBtn("MENTAL", 3),
-            ],
-          ),
-          const Divider(color: Colors.white10, height: 30),
+          // IMPUTS CHIRURGICAUX
+          const Text("VOS MÉTRIQUES DE BASE", style: TextStyle(color: vipGold, fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 15),
 
-          // AFFICHAGE STRICT PAR BLOC DE 5 SLIDERS MAXIMUM
-          if (currentTab == 0) ...[
-            _sexDrop(),
-            _slider(0, "Âge (ans)", 16, 60),
-            _slider(1, "Poids corporel (kg)", 45, 130),
-            _slider(2, "Taille (cm)", 140, 210),
-          ],
-          if (currentTab == 1) ...[
-            _slider(3, "Sommeil (heures/nuit)", 4, 10),
-            _slider(4, "Hydratation (L/jour)", 1, 6),
-            _slider(6, "Repas solides / jour", 2, 7),
-            _slider(11, "Écarts diète / semaine", 0, 10),
-            _slider(14, "Niveau d'énergie (1-10)", 1, 10),
-          ],
-          if (currentTab == 2) ...[
-            _slider(5, "Séances muscu / semaine", 0, 7),
-            _slider(7, "Années de pratique", 0, 15),
-            _slider(8, "Durée de séance (min)", 30, 120),
-            _slider(9, "Cardio hebdo (min)", 0, 240),
-            _slider(16, "Temps de repos (sec)", 30, 180),
-          ],
-          if (currentTab == 3) ...[
-            _slider(10, "Niveau de stress (1-10)", 1, 10),
-            _slider(12, "Qualité récup (1-10)", 1, 10),
-            _slider(13, "Activité (pas x1000)", 2, 20),
-            _slider(15, "Surplus visé (kcal)", 150, 800),
-            _slider(17, "Intensité effort (1-10)", 1, 10),
-            _slider(18, "Rigueur diète (1-10)", 1, 10),
-            _slider(19, "Focus mental (1-10)", 1, 10),
-          ],
+          _label("Poids actuel : ${poids.toInt()} kg"),
+          Slider(value: poids, min: 50, max: 120, activeColor: vipGold, inactiveColor: charcoal, onChanged: (v) => setState(() => poids = v)),
+
+          _label("Heure habituelle de réveil : ${heureReveil.toInt()}h00"),
+          Slider(value: heureReveil, min: 5, max: 11, divisions: 6, activeColor: vipGold, inactiveColor: charcoal, onChanged: (v) => setState(() => heureReveil = v)),
+
+          _label("Niveau d'expérience mécanique"),
+          DropdownButton<String>(
+            value: niveau, dropdownColor: charcoal, style: const TextStyle(color: Colors.white, fontSize: 13),
+            underline: Container(height: 1, color: vipGold),
+            isExpanded: true,
+            items: ["Débutant", "Intermédiaire", "Athlète Élite"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+            onChanged: (v) => setState(() => niveau = v!),
+          ),
 
           const SizedBox(height: 40),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, minimumSize: const Size(double.infinity, 50), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+            style: ElevatedButton.styleFrom(backgroundColor: vipGold, foregroundColor: Colors.black, minimumSize: const Size(double.infinity, 50), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
             onPressed: () => setState(() => showPlan = true),
-            child: const Text("GÉNÉRER LE PLAN ATHLÈTE", style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text("GÉNÉRER LE PROTOCOLE HORAIRE", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
           ),
         ] else ...[
-          // VUE PLAN UNIQUE ULTRA COMPACTE ET MONOCHROME
-          const Text("MÉTRIQUES NUTRITIONNELLES", style: TextStyle(color: Color(0xFF8E8E93), fontSize: 11, fontWeight: FontWeight.bold)),
-          _row("Objectif Journalier", "$targetCalories kcal"),
-          _row("Protéines Cibles", "${targetProteins}g"),
-          _row("Hydratation Minimum", "${values[4] < 3.0 ? '3.5' : values[4].toStringAsFixed(1)} L"),
+          // PLAN HIGH-DENSITY POUR SCREENSHOT (TEXTE PETIT ET PRÉCIS)
+          const Text("⏳ TIMING PROTOCOLE NUTRITION (SURPLUS MACROS)", style: TextStyle(color: vipGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          const SizedBox(height: 12),
           
-          const Divider(color: Colors.white10, height: 30),
-          const Text("PROTOCOLE D'ENTRAÎNEMENT", style: TextStyle(color: Color(0xFF8E8E93), fontSize: 11, fontWeight: FontWeight.bold)),
+          _nutriRow("$tempsNoix - Collation Option Anabolique", "• $grammesNoix g de Noix de Grenoble\n• Protège les articulations (poignets/coudes) lors des charges lourdes.\n• Apport en acides gras essentiels (Oméga-3)."),
+          _nutriRow("$tempsPistaches - Fenêtre de Pré-Congestion", "• Consommer exactement $grammesPistaches g de Pistaches (crues, non salées).\n• À prendre 30 minutes avant le repas ou l'entraînement.\n• Riches en L-Arginine : favorise l'oxyde nitrique, la vasodilatation et l'afflux sanguin vers les bras/biceps."),
+          
+          const Divider(color: Colors.white10, height: 25),
+          
+          const Text("⚔️ AXE D'ISOLATION MUSCULAIRE", style: TextStyle(color: vipGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
           const SizedBox(height: 10),
-          _exo("Bras & Poignets", "• Biceps/Triceps : Curl incliné & Dips (4x10)\n• Avant-bras/Poignets : Curl inversé & Extensions assis (3x15)\n• Grip : Marche du fermier (3 séries max)"),
-          _exo("Cuisses & Mollets", "• Cuisses : Squat lourd complet (4x6) + Presse (3x12)\n• Mollets : Extensions debout sur bloc (5x20, contraction 2s)"),
-          _exo("Dos & Épaules", "• Dos : Tractions strictes (4xMax) + Rowing barre (4x8)\n• Épaules : Développé militaire (4x8) + Oiseau (4x15)"),
-          
-          const Divider(color: Colors.white10, height: 30),
+          _exoRow("Membres Supérieurs (Bras, Avant-bras, Poignets)", "• Biceps/Triceps : SuperSet Curl incliné + Dips lestés (4 x 10 répétitions)\n• Avant-bras : Curl inversé à la barre EZ (3 x 12, contrôle excentrique)\n• Poignets : Flexions au banc avec haltères courts (3 x 15, grosse contraction en haut)"),
+          _exoRow("Membres Inférieurs & Postérieurs (Cuisses, Mollets, Dos)", "• Cuisses/Jambes : Squat lourd (4x6) + Soulevé de terre roumain (3x8)\n• Mollets : Extensions debout (5x20) avec pause d'arrêt de 2 secondes en bas\n• Fixateurs du Dos : Tractions strictes pronation (4 x Maximum de reps)"),
+
+          const Divider(color: Colors.white10, height: 35),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, side: const BorderSide(color: Colors.white30), minimumSize: const Size(double.infinity, 45), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, side: const BorderSide(color: vipGold, width: 0.5), minimumSize: const Size(double.infinity, 42), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
             onPressed: () => setState(() => showPlan = false),
-            child: const Text("MODIFIER LES INFOS", style: TextStyle(color: Colors.white, fontSize: 12)),
+            child: const Text("AJUSTER LES HORAIRES / POIDS", style: TextStyle(color: vipGold, fontSize: 11, fontWeight: FontWeight.bold)),
           ),
         ]
       ],
     );
   }
 
-  // --- COMPOSANTS INTERNES EN LIGNE DROITE POUR XCODE ---
-  Widget _tabBtn(String label, int index) {
-    bool isSelected = currentTab == index;
-    return TextButton(
-      style: TextButton.styleFrom(padding: EdgeInsets.zero),
-      onPressed: () => setState(() => currentTab = index),
-      child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.white30, fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-    );
-  }
+  // COMPOSANTS RADICAUX ET ULTRA-LÉGERS
+  Widget _label(String t) => Padding(padding: const EdgeInsets.only(top: 14, bottom: 4), child: Text(t, style: const TextStyle(color: Colors.whiteBneutral, fontSize: 12, color: Colors.white70)));
 
-  Widget _sexDrop() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text("Sexe", style: TextStyle(color: Colors.white70, fontSize: 13)),
-        DropdownButton<String>(
-          value: sexe, dropdownColor: Colors.black, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-          underline: Container(),
-          items: ["Homme", "Femme"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-          onChanged: (v) => setState(() => sexe = v!),
-        )
-      ],
-    );
-  }
-
-  Widget _slider(int index, String label, double min, double max) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            Text(values[index].toInt().toString(), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        Slider(
-          value: values[index], min: min, max: max,
-          activeColor: Colors.white, inactiveColor: Colors.white10,
-          onChanged: (v) => setState(() => values[index] = v),
-        ),
-      ],
-    );
-  }
-
-  Widget _row(String label, String value) {
+  Widget _nutriRow(String time, String details) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)), Text(value, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))]),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(time, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 2),
+          Text(details, style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11, height: 1.4)),
+        ],
+      ),
     );
   }
 
-  Widget _exo(String title, String desc) {
+  Widget _exoRow(String title, String desc) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)), const SizedBox(height: 2), Text(desc, style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11, height: 1.4))]),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white90, fontSize: 11, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 2),
+          Text(desc, style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11, height: 1.4)),
+        ],
+      ),
     );
   }
 }
