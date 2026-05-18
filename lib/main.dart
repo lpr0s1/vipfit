@@ -37,7 +37,8 @@ class _WealthVisionMiniState extends State<WealthVisionMini> {
               // Indicateur d'étape
               Text(
                 step == 0 ? "ÉTAPE 1 SUR 2" : "ANALYSE DU PROFIL",
-                style: const TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2),
+                // CORRECTION : Le mot-clé 'const' a été retiré ici pour accepter la variable locale 'accent'
+                style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2),
               ),
               const SizedBox(height: 8),
               Text(
