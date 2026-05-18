@@ -29,23 +29,33 @@ workflows:
             echo "Attention : assets/app_icon.png manquant, l'icône par défaut sera utilisée."
           fi
 
-      - name: 3.5 Forcer Xcode à ignorer la Development Team
+      - name: 4. Compiler la version iOS (Astuce Simulateur ARM64)
         script: |
-          echo "Désactivation des verrous de signature Apple..."
-          echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGNING_REQUIRED = NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGN_IDENTITY = " >> ios/Flutter/Release.xcconfig
-
-      - name: 4. Compiler la version iOS (Sans signature)
-        script: |
-          echo "Compilation en cours..."
-          flutter build ios --release --no-codesign
+          echo "Compilation via l'astuce simulateur pour contourner Xcode..."
+          # On compile pour simulateur (zéro vérification de team) mais en forçant l'architecture ARM64 des vrais iPhone
+          flutter build ios --simulator --config-only
+          
+          echo "Lancement du build Xcode brut..."
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+                     -scheme Runner \
+                     -configuration Release \
+                     -sdk iphonesimulator \
+                     ARCHS="arm64" \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGN_IDENTITY="" \
+                     ONLY_ACTIVE_ARCH=NO \
+                     clean build
 
       - name: 5. Créer le fichier .ipa
         script: |
           echo "Empaquetage du Payload pour Sideloadly..."
+          cd $CM_BUILD_DIR
           mkdir -p build/ios/ipa
-          cd build/ios/iphoneos
+          
+          # Le build atterrit dans le dossier Release-iphonesimulator
+          cd build/ios/iphonesimulator
           mkdir -p Payload
           mv Runner.app Payload/
           zip -r -q ../ipa/vipfit.ipa Payload
