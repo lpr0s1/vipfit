@@ -1,40 +1,63 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(const MaterialApp(home: Scaffold(backgroundColor: Color(0xFF0A0E17), body: WealthVisionSingle())));
+void main() => runApp(const MaterialApp(home: Scaffold(backgroundColor: Color(0xFF0A0E17), body: WealthVisionUltimate())));
 
-class WealthVisionSingle extends StatefulWidget {
-  const WealthVisionSingle({super.key});
+class WealthVisionUltimate extends StatefulWidget {
+  const WealthVisionUltimate({super.key});
   @override
-  State<WealthVisionSingle> createState() => _WealthVisionSingleState();
+  State<WealthVisionUltimate> createState() => _WealthVisionUltimateState();
 }
 
-class _WealthVisionSingleState extends State<WealthVisionSingle> {
-  // Variables de profil
+class _WealthVisionUltimateState extends State<WealthVisionUltimate> {
+  // --- VARIABLES D'ENTRÉE ---
   double salaire = 2500;
-  double age = 30;
-  String villeSecteur = "75";
+  double capitalTrading = 10000;
   String businessType = "Achat de Box"; 
-  bool afficherResultat = false; // Gère l'affichage des blocs
+  String destinationExpat = "France";
+  bool isPropFirm = false; // Si l'utilisateur utilise FTMO ou similaire
+  bool afficherResultat = false;
 
-  // Calculs métiers directs
-  bool get isZoneVerte => 
-    villeSecteur == "75" || villeSecteur == "92" || villeSecteur == "69" || 
-    villeSecteur.toLowerCase() == "paris" || villeSecteur.toLowerCase() == "lyon";
-
-  double get capaciteEmprunt => salaire * 0.35;
-
-  double get probaReussite {
-    double base = isZoneVerte ? 85.0 : 45.0;
-    if (businessType == "Container") base -= 10.0;
-    if (age < 21 || age > 60) base -= 15.0;
-    return base.clamp(0.0, 100.0);
+  // --- LOGIQUE MÉTIER & CALCULS ---
+  
+  // 1. Calcul des gains Trading / Prop Firm
+  double get gainTradingBrut {
+    // On estime une performance réaliste de 5% par mois
+    double performanceMensuelle = 0.05;
+    return capitalTrading * performanceMensuelle;
   }
 
-  double get gainEstimeMois {
-    double multi = isZoneVerte ? 1.2 : 0.7;
-    if (businessType == "Location") return (capaciteEmprunt / 100) * 45 * multi;
-    if (businessType == "Container") return (capaciteEmprunt / 250) * 160 * multi;
-    return (capaciteEmprunt / 150) * 110 * multi;
+  double get gainTradingNet {
+    if (isPropFirm) {
+      // FTMO prend généralement 20% des gains (tu gardes 80%)
+      return gainTradingBrut * 0.80;
+    }
+    // Trading classique : impôts Flat Tax en France (30%) par défaut pour le calcul de base
+    return gainTradingBrut * 0.70;
+  }
+
+  // 2. Coût de la vie selon la destination (comparé à un coût de base en France)
+  int get coutVieDestination {
+    if (destinationExpat == "Bali") return 1200;  // Vie très abordable
+    if (destinationExpat == "Dubaï") return 3500; // Vie chère (logement, sorties)
+    return 2000; // France (Moyenne globale)
+  }
+
+  // 3. Avantages fiscaux de la destination
+  double get resteApresImpotExpat {
+    double revenusTotaux = salaire + gainTradingNet;
+    if (destinationExpat == "Dubaï") return revenusTotaux; // 0% d'impôt sur le revenu
+    if (destinationExpat == "Bali") return revenusTotaux * 0.90; // Faible imposition (BNS, etc.)
+    return revenusTotaux * 0.80; // France (Charges + Impôt moyen)
+  }
+
+  // 4. Reste à vivre réel final
+  double get resteAVivreFinal => resteApresImpotExpat - coutVieDestination;
+
+  // 5. Score d'expatriation (Indice de faisabilité)
+  String get diagnosticExpat {
+    if (resteAVivreFinal < 0) return "❌ Projet Impossible : Tes revenus actuels ne couvrent pas le coût de la vie sur place.";
+    if (resteAVivreFinal < 1000) return "⚠️ Projet Risqué : Tu peux y vivre, mais tu manqueras de sécurité financière.";
+    return "🟢 Projet Validé ! Tu auras un excellent niveau de vie par rapport à la France.";
   }
 
   @override
@@ -45,64 +68,88 @@ class _WealthVisionSingleState extends State<WealthVisionSingle> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 24),
-          const Text("WealthVision Mini", style: TextStyle(color: Colors.cyan, fontSize: 28, fontWeight: FontWeight.bold)),
+          const Text("WealthVision Évolution", style: TextStyle(color: Colors.cyan, fontSize: 26, fontWeight: FontWeight.bold)),
           const Divider(color: Colors.white10, height: 32),
 
           if (!afficherResultat) ...[
-            // BLOC FORMULAIRE
-            Text("Votre profil : ${age.toInt()} ans | ${salaire.toInt()} €/mois", style: const TextStyle(color: Colors.white)),
-            Slider(value: age, min: 18, max: 75, activeColor: Colors.cyan, onChanged: (v) => setState(() => age = v)),
-            Slider(value: salaire, min: 1200, max: 7000, activeColor: Colors.cyan, onChanged: (v) => setState(() => salaire = v)),
+            // === SECTION 1 : VOS REVENUS ACTUELS ===
+            const Text("1. Vos Revenus Actuels", style: TextStyle(color: Colors.cyan, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text("Salaire Pro : ${salaire.toInt()} €/mois", style: const TextStyle(color: Colors.white)),
+            Slider(value: salaire, min: 0, max: 10000, activeColor: Colors.cyan, onChanged: (v) => setState(() => salaire = v)),
             
             const SizedBox(height: 16),
-            const Text("Secteur (Département ou Ville) :", style: TextStyle(color: Colors.white70)),
-            TextField(
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(hintText: "Ex: 75 ou Paris", hintStyle: TextStyle(color: Colors.white24)),
-              onChanged: (v) => setState(() => villeSecteur = v),
-            ),
+            // === SECTION 2 : TRADING & PROP FIRM ===
+            const Text("2. Trading & Capital (FTMO)", style: TextStyle(color: Colors.cyan, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text("Capital disponible (ou taille de compte) : ${capitalTrading.toInt()} €", style: const TextStyle(color: Colors.white)),
+            Slider(value: capitalTrading, min: 2000, max: 200000, activeColor: Colors.cyan, onChanged: (v) => setState(() => capitalTrading = v)),
             
-            const SizedBox(height: 24),
-            const Text("Type de Projet :", style: TextStyle(color: Colors.white70)),
+            Row(
+              children: [
+                const Text("Est-ce un compte Prop Firm (FTMO) ?", style: TextStyle(color: Colors.white70)),
+                Checkbox(
+                  value: isPropFirm,
+                  activeColor: Colors.cyan,
+                  checkColor: Colors.black,
+                  onChanged: (v) => setState(() => isPropFirm = v!),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            // === SECTION 3 : DESTINATION EXPAT ===
+            const Text("3. Objectif Expatriation", style: TextStyle(color: Colors.cyan, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text("Où souhaitez-vous vivre ?", style: TextStyle(color: Colors.white70)),
             DropdownButton<String>(
-              value: businessType,
+              value: destinationExpat,
               dropdownColor: const Color(0xFF161F30),
               style: const TextStyle(color: Colors.white, fontSize: 16),
               isExpanded: true,
               items: const [
-                DropdownMenuItem(value: "Achat de Box", child: Text("Achat de Box classique")),
-                DropdownMenuItem(value: "Location", child: Text("Sous-location / Conciergerie")),
-                DropdownMenuItem(value: "Container", child: Text("Container Maritime")),
+                DropdownMenuItem(value: "France", child: Text("Rester en France 🇫🇷")),
+                DropdownMenuItem(value: "Bali", child: Text("Partir à Bali (Indonésie) 🇮🇩")),
+                DropdownMenuItem(value: "Dubaï", child: Text("Partir à Dubaï (Émirats) 🇦🇪")),
               ],
-              onChanged: (v) => setState(() => businessType = v!),
+              onChanged: (v) => setState(() => destinationExpat = v!),
             ),
             
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan, minimumSize: const Size(double.infinity, 50)),
               onPressed: () => setState(() => afficherResultat = true),
-              child: const Text("LANCER L'ANALYSE", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              child: const Text("SIMULER L'EXPATRIATION", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
             ),
           ] else ...[
-            // BLOC RÉSULTATS
-            Text(isZoneVerte ? "ZONAGE : VERT (Forte demande 🟢)" : "ZONAGE : ROUGE (Marché risqué 🔴)", 
-                 style: TextStyle(color: isZoneVerte ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 20),
+            // === BLOC RÉSULTATS INTERNATIONAUX ===
+            Text("ANALYSE DE DESTINATION : $destinationExpat", style: const TextStyle(color: Colors.cyan, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
             
-            Text("Capacité d'emprunt maximale : ${capaciteEmprunt.toInt()} €", style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 8),
-            Text("Probabilité de succès : ${probaReussite.toInt()}%", 
-                 style: TextStyle(color: probaReussite > 50 ? Colors.greenAccent : Colors.orangeAccent, fontSize: 20, fontWeight: FontWeight.bold)),
+            // Comparatifs des chiffres
+            Text("Gains Trading estimés (5% p.m) : +${gainTradingBrut.toInt()} €", style: const TextStyle(color: Colors.white70)),
+            Text(isPropFirm ? "Part FTMO déduite (Split 80/20) : ${gainTradingNet.toInt()} €" : "Gain net après impôt de base : ${gainTradingNet.toInt()} €", style: const TextStyle(color: Colors.white54, fontSize: 13)),
+            const Divider(color: Colors.white10, height: 24),
+
+            Text("Coût de la vie estimé sur place : ${coutVieDestination} € / mois", style: const TextStyle(color: Colors.orangeAccent)),
+            Text(destinationExpat == "France" ? "Fiscalité : Lourde (Impôts + Taxes)" : destinationExpat == "Dubaï" ? "Fiscalité : Exceptionnelle (0% Impôts)" : "Fiscalité : Avantageuse (Zone nomade)", style: const TextStyle(color: Colors.white70)),
+            const Divider(color: Colors.white10, height: 24),
+
+            const Text("Reste à vivre REEL sur place :", style: TextStyle(color: Colors.white54)),
+            Text("${resteAVivreFinal.toInt()} € / mois", style: TextStyle(color: resteAVivreFinal > 1500 ? Colors.greenWithOpacity(0.9) : Colors.greenAccent, fontSize: 32, fontWeight: FontWeight.bold)),
+            
             const SizedBox(height: 24),
-            
-            const Text("Gains potentiels nets :", style: TextStyle(color: Colors.white54)),
-            Text("${gainEstimeMois.toInt()} € / mois", style: const TextStyle(color: Colors.cyan, fontSize: 36, fontWeight: FontWeight.bold)),
+            Container(
+              padding: const EdgeInsets.all(12),
+              color: Colors.white.withOpacity(0.05),
+              child: Text(diagnosticExpat, style: const TextStyle(color: Colors.white, fontSize: 14), textAlign: TextAlign.center),
+            ),
             
             const SizedBox(height: 40),
             TextButton.icon(
               onPressed: () => setState(() => afficherResultat = false),
-              icon: const Icon(Icons.edit, color: Colors.cyan),
-              label: const Text("Modifier mes informations", style: TextStyle(color: Colors.cyan)),
+              icon: const Icon(Icons.arrow_back, color: Colors.cyan),
+              label: const Text("Modifier mon profil et mon capital", style: TextStyle(color: Colors.cyan)),
             ),
           ],
         ],
