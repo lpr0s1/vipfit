@@ -1,153 +1,158 @@
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MaterialApp(
-  home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipFit())),
+  home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipFitLab())),
   debugShowCheckedModeBanner: false,
 ));
 
-class VipFit extends StatefulWidget {
-  const VipFit({super.key});
+class VipFitLab extends StatefulWidget {
+  const VipFitLab({super.key});
   @override
-  State<VipFit> createState() => _VipFitState();
+  State<VipFitLab> createState() => _VipFitLabState();
 }
 
-class _VipFitState extends State<VipFit> {
+class _VipFitLabState extends State<VipFitLab> {
   bool show = false;
+  
+  // Paramètres Biométriques
   String sexe = "Homme";
+  int age = 25;
   int poids = 75;
+  int taille = 175;
   int reveil = 7;
+
+  // Sélecteur de Points Faibles (Objectifs)
+  bool focusPoignets = false;
+  bool focusJambes = false;
+  bool focusBras = false;
+  bool focusDos = false;
 
   @override
   Widget build(BuildContext context) {
     const Color gold = Color(0xFFD4AF37);
-    
-    // Algorithmes de calculs nutritionnels VIP directes
-    int cal = (sexe == "Homme" ? (10 * poids + 500) : (10 * poids + 200)) + 500;
+
+    // --- LOGIQUE VIP ---
+    int cal = (sexe == "Homme") ? (10 * poids + 6 * taille - 5 * age + 500) : (10 * poids + 6 * taille - 5 * age + 200);
     int prot = (poids * 2.2).toInt();
-    int noix = (poids * 0.4).toInt();
-    int pistache = (poids * 0.5).toInt();
+    int gNoix = (poids * 0.4).toInt();
+    int gPistache = (poids * 0.5).toInt();
     int hNoix = (reveil + 3) % 24;
     int hPistache = (reveil + 9) % 24;
 
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        // --- HEADER VIP ---
-        Row(
-          children: [
-            const Icon(Icons.star, color: gold, size: 26),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("VIP FIT LAB", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                Text("PROTOCOLE HORAIRE & PERFORMANCE", style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 9)),
-              ],
-            )
-          ],
-        ),
-        const Divider(color: Colors.white10, height: 30),
+        // HEADER
+        const Row(children: [
+          Icon(Icons.military_tech, color: gold, size: 30),
+          SizedBox(width: 10),
+          Text("VIP FIT LAB", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        ]),
+        const Divider(color: Colors.white10, height: 40),
 
         if (!show) ...[
-          // === VUE COMPILATION ULTRALÉGÈRE (BOUTONS +/-) ===
-          const Text("PARAMÈTRES DE L'ATHLÈTE", style: TextStyle(color: gold, fontSize: 12, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
+          // === ÉTAPE 1 : PROFIL ATHLÈTE ===
+          const _Title("PROFIL BIOMÉTRIQUE"),
+          _selector("ÂGE", age, (v) => setState(() => age = v)),
+          _selector("POIDS (KG)", poids, (v) => setState(() => poids = v)),
+          _selector("TAILLE (CM)", taille, (v) => setState(() => taille = v)),
+          _selector("RÉVEIL (H)", reveil, (v) => setState(() => reveil = v)),
 
-          // Sexe Dropdown
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(children: [Icon(Icons.person, color: gold, size: 20), SizedBox(width: 10), Text("Sexe biologique", style: TextStyle(color: Colors.white70, fontSize: 14))]),
-              DropdownButton<String>(
-                value: sexe, dropdownColor: Colors.grey[900], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                underline: Container(),
-                items: ["Homme", "Femme"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (v) => setState(() => sexe = v!),
-              )
-            ],
-          ),
-          const Divider(color: Colors.white10, height: 25),
-
-          // Poids Sélecteur
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(children: [Icon(Icons.scale, color: gold, size: 20), SizedBox(width: 10), Text("Poids corporel", style: TextStyle(color: Colors.white70, fontSize: 14))]),
-              Row(
-                children: [
-                  IconButton(icon: const Icon(Icons.remove_circle_outline, color: gold), onPressed: () => setState(() => poids--)),
-                  Text("$poids kg", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  IconButton(icon: const Icon(Icons.add_circle_outline, color: gold), onPressed: () => setState(() => poids++)),
-                ],
-              )
-            ],
-          ),
-          const Divider(color: Colors.white10, height: 25),
-
-          // Réveil Sélecteur
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(children: [Icon(Icons.alarm, color: gold, size: 20), SizedBox(width: 10), Text("Heure de réveil", style: TextStyle(color: Colors.white70, fontSize: 14))]),
-              Row(
-                children: [
-                  IconButton(icon: const Icon(Icons.remove_circle_outline, color: gold), onPressed: () => setState(() => reveil = reveil > 0 ? reveil - 1 : 23)),
-                  Text("${reveil}h00", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  IconButton(icon: const Icon(Icons.add_circle_outline, color: gold), onPressed: () => setState(() => reveil = (reveil + 1) % 24)),
-                ],
-              )
-            ],
-          ),
+          const SizedBox(height: 30),
+          // === ÉTAPE 2 : POINTS FAIBLES (L'utilisateur choisit) ===
+          const _Title("ZONES À AMÉLIORER (POINTS FAIBLES)"),
+          _check("POIGNETS FINS (RENFORCER AVANT-BRAS)", focusPoignets, (v) => setState(() => focusPoignets = v!)),
+          _check("JAMBES FINES (MASSE CUISSES/MOLLETS)", focusJambes, (v) => setState(() => focusJambes = v!)),
+          _check("BRAS (BICEPS / TRICEPS)", focusBras, (v) => setState(() => focusBras = v!)),
+          _check("DOS & ÉPAULES", focusDos, (v) => setState(() => focusDos = v!)),
 
           const SizedBox(height: 40),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: gold, minimumSize: const Size(double.infinity, 50), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+            style: ElevatedButton.styleFrom(backgroundColor: gold, minimumSize: const Size(double.infinity, 55), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
             onPressed: () => setState(() => show = true),
-            child: const Text("GÉNÉRER LE PROTOCOLE", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            child: const Text("GÉNÉRER MON PROTOCOLE", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           ),
         ] else ...[
-          // === VUE RÉSULTATS : COMPACTE ET PRESTIGE ===
-          const Text("🎯 MACRONUTRITION SUR-MESURE", style: TextStyle(color: gold, fontSize: 12, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Volume Énergétique", style: TextStyle(color: Colors.white70, fontSize: 13)), Text("$cal kcal / jour", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))]),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Protéines structurales", style: TextStyle(color: Colors.white70, fontSize: 13)), Text("${prot}g / jour", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))]),
-          
-          const Divider(color: Colors.white10, height: 25),
+          // === VUE RÉSULTATS (SCREENSHOT READY) ===
+          const Center(child: Text("PROTOCOLE DE PERFORMANCE VIP", style: TextStyle(color: gold, fontWeight: FontWeight.bold, fontSize: 14))),
+          const Divider(color: Colors.white10, height: 30),
 
-          const Text("⏳ TIMING PROTOCOLE HORAIRE", style: TextStyle(color: gold, fontSize: 12, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 15),
+          // Nutrition
+          const _Title("🎯 MACRONUTRITION CALIBRÉE"),
+          _res("Calories de Masse", "$cal kcal"),
+          _res("Protéines structurales", "${prot}g"),
           
-          Row(children: [const Icon(Icons.bolt, color: gold, size: 16), const SizedBox(width: 6), Text("$hNoix h00 - Collation Articulations", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))]),
-          Padding(
-            padding: const EdgeInsets.only(left: 22, top: 4, bottom: 15),
-            child: Text("Prendre précisément $noix g de Noix de Grenoble (acides gras Oméga-3). Objectif : lubrifier les tendons et protéger les articulations des poignets/coudes avant d'attaquer les barres lourdes.", style: const TextStyle(color: Colors.white54, fontSize: 11, height: 1.4)),
-          ),
-
-          Row(children: [const Icon(Icons.bolt, color: gold, size: 16), const SizedBox(width: 6), Text("$hPistache h00 - Vasodilatation Musculaire", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))]),
-          Padding(
-            padding: const EdgeInsets.only(left: 22, top: 4, bottom: 15),
-            child: Text("Consommer $pistache g de Pistaches crues (non salées). Sa haute teneur en L-Arginine stimule l'oxyde nitrique : idéal 30 min avant ton bloc d'effort pour saturer les biceps et les avant-bras de sang.", style: const TextStyle(color: Colors.white54, fontSize: 11, height: 1.4)),
-          ),
-
-          const Divider(color: Colors.white10, height: 25),
-          const Text("⚔️ MÉCANIQUE D'ISOLATION ANABOLIQUE", style: TextStyle(color: gold, fontSize: 12, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
+          const Divider(color: Colors.white10, height: 30),
           
-          const Text("Membres Supérieurs & Grip", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-          const Text("• SuperSet Biceps/Triceps : Curl incliné + Dips lestés (4x10)\n• Avant-bras : Curl inversé barre EZ (3x12) + Flexions poignets (3x15)", style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.4)),
-          
-          const SizedBox(height: 12),
-          const Text("Membres Inférieurs", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-          const Text("• Cuisses & Ischios : Squat lourd complet (4x6) + Terre roumain (3x8)\n• Mollets : Extensions debout sur bloc (5x20, pause de 2s en étirement)", style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.4)),
+          // Timing Noix / Pistaches
+          const _Title("⏳ TIMING PROTOCOLE NUTRITION"),
+          _timing(hNoix, "NOIX DE GRENOBLE ($gNoix g)", "Anti-inflammatoire naturel. Protège les tendons des poignets et coudes avant l'effort."),
+          _timing(hPistache, "PISTACHES CRUES ($gPistache g)", "Boost L-Arginine. Maximise la vasodilatation (congestion) des bras et jambes."),
 
           const Divider(color: Colors.white10, height: 30),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, side: const BorderSide(color: gold, width: 0.5), minimumSize: const Size(double.infinity, 45), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+
+          // Entraînement dynamique selon les choix
+          const _Title("⚔️ ENTRAÎNEMENT CIBLÉ"),
+          if (focusPoignets) _exo("ISOLATION POIGNETS / AVANT-BRAS", "• Curl inversé barre EZ (4x12)\n• Flexions/Extensions poignets haltères (3x20)\n• Farmer Walk (Marche du fermier) 3 séries max"),
+          if (focusJambes) _exo("MASSE BAS DU CORPS", "• Squat lourd complet (5x5)\n• Presse à cuisses (4x12)\n• Extensions mollets debout (5x20) - Arrêt 2s en bas"),
+          if (focusBras) _exo("VOLUME BRAS (CONGESTION)", "• SuperSet Curl incliné + Dips (4x10)\n• Extension triceps poulie haute (3x15)"),
+          if (focusDos) _exo("LARGEUR DOS & ÉPAULES", "• Tractions strictes pronation (4xMax)\n• Développé militaire haltères (4x8)"),
+
+          const SizedBox(height: 40),
+          TextButton(
             onPressed: () => setState(() => show = false),
-            child: const Text("MODIFIER LES INFOS", style: TextStyle(color: gold, fontSize: 12, fontWeight: FontWeight.bold)),
+            child: const Text("MODIFIER LE PROFIL", style: TextStyle(color: gold)),
           ),
         ]
       ],
     );
+  }
+
+  // --- WIDGETS INTERNES ULTRA-LÉGERS ---
+  Widget _selector(String label, int val, Function(int) onChange) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+      Row(children: [
+        IconButton(icon: const Icon(Icons.remove, color: Color(0xFFD4AF37), size: 18), onPressed: () => onChange(val - 1)),
+        Text("$val", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        IconButton(icon: const Icon(Icons.add, color: Color(0xFFD4AF37), size: 18), onPressed: () => onChange(val + 1)),
+      ])
+    ]),
+  );
+
+  Widget _check(String t, bool v, Function(bool?) onC) => CheckboxListTile(
+    title: Text(t, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+    value: v, onChanged: onC, activeColor: const Color(0xFFD4AF37), checkColor: Colors.black, contentPadding: EdgeInsets.zero,
+  );
+
+  Widget _res(String l, String v) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(l, style: const TextStyle(color: Colors.white70)), Text(v, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))]),
+  );
+
+  Widget _timing(int h, String title, String desc) => Padding(
+    padding: const EdgeInsets.only(bottom: 15),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text("$h h 00 - $title", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+      Text(desc, style: const TextStyle(color: Colors.white38, fontSize: 11, height: 1.4)),
+    ]),
+  );
+
+  Widget _exo(String t, String d) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(t, style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 11)),
+      Text(d, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4)),
+    ]),
+  );
+}
+
+class _Title extends StatelessWidget {
+  final String text;
+  const _Title(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(padding: const EdgeInsets.only(top: 20, bottom: 10), child: Text(text, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)));
   }
 }
