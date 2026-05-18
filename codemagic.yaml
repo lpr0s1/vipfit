@@ -29,14 +29,21 @@ workflows:
             echo "Attention : assets/app_icon.png manquant, l'icône par défaut sera utilisée."
           fi
 
+      - name: 3.5 Forcer Xcode à ignorer la Development Team
+        script: |
+          echo "Désactivation des verrous de signature Apple..."
+          echo "CODE_SIGNING_ALLOWED = NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGNING_REQUIRED = NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGN_IDENTITY = " >> ios/Flutter/Release.xcconfig
+
       - name: 4. Compiler la version iOS (Sans signature)
         script: |
-          echo "Compilation en cours... (Mode sans signature Apple)"
+          echo "Compilation en cours..."
           flutter build ios --release --no-codesign
 
       - name: 5. Créer le fichier .ipa
         script: |
-          echo "Empaquetage du Payload pour le Sideloading..."
+          echo "Empaquetage du Payload pour Sideloadly..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           mkdir -p Payload
@@ -49,7 +56,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - test@example.com # Pense à remplacer par ton vrai email si besoin
+          - test@example.com
         notify:
           success: true
           failure: true
