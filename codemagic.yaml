@@ -15,33 +15,41 @@ workflows:
           else
             echo "Dossier iOS déjà présent."
           fi
+
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
-            - name: 1.5 Générer automatiquement l'icône de l'application
+
+      - name: 3. Générer automatiquement l'icône de l'application
         script: |
           if [ -f "assets/app_icon.png" ]; then
-            flutter pub get
+            echo "Icône trouvée, génération des ressources iOS..."
             dart run flutter_launcher_icons
+          else
+            echo "Attention : assets/app_icon.png manquant, l'icône par défaut sera utilisée."
           fi
-      - name: 3. Compiler la version iOS (Sans signature)
+
+      - name: 4. Compiler la version iOS (Sans signature)
         script: |
           echo "Compilation en cours... (Mode sans signature Apple)"
           flutter build ios --release --no-codesign
-      - name: 4. Créer le fichier .ipa
+
+      - name: 5. Créer le fichier .ipa
         script: |
-          echo "Empaquetage du Payload..."
+          echo "Empaquetage du Payload pour le Sideloading..."
           mkdir -p build/ios/ipa
           cd build/ios/iphoneos
           mkdir -p Payload
           mv Runner.app Payload/
           zip -r -q ../ipa/vipfit.ipa Payload
+
     artifacts:
       - build/ios/ipa/*.ipa
+
     publishing:
       email:
         recipients:
-          - test@example.com # Codemagic remplacera par votre email de compte
+          - test@example.com # Pense à remplacer par ton vrai email si besoin
         notify:
           success: true
           failure: true
