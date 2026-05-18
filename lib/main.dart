@@ -77,7 +77,6 @@ class _WealthVisionState extends State<WealthVision> {
   int get projectionGains {
     int anneesRestantes = max(0, 65 - age);
     int capitalBrut = epargneAnnuelle * anneesRestantes;
-    // Ajout d'intérêts composés basiques sur les gains du business envisagé
     int gainsBusinessAnnuels = analyseBusiness['gain'] * 12;
     return capitalBrut + (gainsBusinessAnnuels * anneesRestantes);
   }
@@ -141,7 +140,7 @@ class _WealthVisionState extends State<WealthVision> {
                 const SizedBox(height: 24),
                 Text("$salaire € / mois", style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: accent, letterSpacing: -2)),
                 const Text("Incluez votre salaire et autres revenus.", style: TextStyle(color: Colors.white54)),
-                Slider(value: salaire.toDouble(), min: 1000, max: 15000, divisions: 140, activeColor: accent, inactiveColor: cardBg, onChanged: (v) => setState(() => salaire = v.toInt())),
+                Slider(value: salaire.toDouble(), min: 1000, max: 15000, activeColor: accent, inactiveColor: cardBg, onChanged: (v) => setState(() => salaire = v.toInt())),
               ],
               if (step == 2) ...[
                 const Text("ÉTAPE 3", style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 3)),
@@ -150,7 +149,7 @@ class _WealthVisionState extends State<WealthVision> {
                 const SizedBox(height: 24),
                 Text("$depenses € / mois", style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: accent, letterSpacing: -2)),
                 const Text("Loyer, courses, abonnements, crédits en cours.", style: TextStyle(color: Colors.white54)),
-                Slider(value: depenses.toDouble(), min: 500, max: 10000, divisions: 95, activeColor: accent, inactiveColor: cardBg, onChanged: (v) => setState(() => depenses = v.toInt())),
+                Slider(value: depenses.toDouble(), min: 500, max: 10000, activeColor: accent, inactiveColor: cardBg, onChanged: (v) => setState(() => depenses = v.toInt())),
               ],
               if (step == 3) ...[
                 const Text("SYNTHÈSE", style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 3)),
@@ -178,7 +177,13 @@ class _WealthVisionState extends State<WealthVision> {
                 },
                 child: Container(
                   width: double.infinity, height: 56,
-                  decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: accent.withOpacity(0.15), blurRadius: 25, offset: const Offset(0, 8))]),
+                  decoration: BoxDecoration(
+                    color: accent, 
+                    borderRadius: BorderRadius.circular(16), 
+                    boxShadow: [
+                      BoxShadow(color: accent.withOpacity(0.15), blurRadius: 25, offset: const Offset(0, 8))
+                    ]
+                  ),
                   alignment: Alignment.center,
                   child: Text(step == 3 ? "LANCER L'ANALYSE" : "CONTINUER", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5)),
                 ),
@@ -227,7 +232,6 @@ class _WealthVisionState extends State<WealthVision> {
                         width: double.infinity, padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(20)),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          // CORRECTION : Le mot clé "const" a été supprimé du widget Text et placé uniquement sur le TextStyle.
                           Text("CAPITAL À ${max(age, 65)} ANS", style: const TextStyle(color: accent, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1)),
                           const SizedBox(height: 8),
                           Text("$projectionGains €", style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.black)),
