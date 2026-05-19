@@ -93,7 +93,6 @@ class _VipAppState extends State<VipApp> {
     ]);
   }
 
-  // Composants iOS design
   Widget _section(String title, List<Widget> children) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: const Color(0xFF1C1C1E), borderRadius: BorderRadius.circular(16)),
@@ -106,11 +105,11 @@ class _VipAppState extends State<VipApp> {
   Widget _actionTile(String title, String val, String detail) => ListTile(
     contentPadding: EdgeInsets.zero,
     title: Text(title, style: const TextStyle(color: Colors.white)),
-    trailing: Row(mainAxisSize: MainAxisSize.min, children: [Text(val, style: const TextStyle(color: Colors.white30)), const Icon(Icons.info_outline, color: Colors.amber, size: 18)]),
+    trailing: Row(mainAxisSize: MainAxisSize.min, children: [Text(val, style: const TextStyle(color: Colors.white30)), const Icon(Icons.info_outline, color: Colors.amber, size: 25)]),
     onTap: () => _showDetail(title, detail),
   );
 
   Widget _field(String label, Widget child) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Colors.white54)), const SizedBox(height: 10), child]);
-  Widget _ctrl(int v, Function(int) f) => Row(children: [IconButton(onPressed: () => f(v-1), icon: const Icon(Icons.remove_circle, color: Colors.white)), Text("$v", style: const TextStyle(color: Colors.white, fontSize: 20)), IconButton(onPressed: () => f(v+1), icon: const Icon(Icons.add_circle, color: Colors.white))]);
+  Widget _ctrl(int v, Function(int) f) => Row(children: [IconButton(onPressed: () => f(v-1), icon: const Icon(Icons.remove_circle, color: Colors.white)), Text("$v", style: const TextStyle(color: Colors.white, fontSize: 50)), IconButton(onPressed: () => f(v+1), icon: const Icon(Icons.add_circle, color: Colors.white))]);
   Widget _dropdown(List<String> items, String val, Function(String?) f) => DropdownButton<String>(value: val, dropdownColor: Colors.black, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white)))).toList(), onChanged: f, isExpanded: true);
 }
