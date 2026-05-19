@@ -33,7 +33,7 @@ class _VipAppState extends State<VipApp> {
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text("Version: 0.0.1", style: TextStyle(color: Colors.white54)),
           const SizedBox(height: 20),
-          ElevatedButton(onPressed: _launchTelegram, child: const Text("Rejoindre Telegram")),
+          ElevatedButton(onPressed: _launchTelegram, child: const Text("Telegram")),
         ]),
       ),
     );
@@ -68,24 +68,45 @@ class _VipAppState extends State<VipApp> {
   }
 
   Widget _buildResults() {
+    final List<String> jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
+    
     return ListView(padding: const EdgeInsets.all(25), children: [
       const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
       const SizedBox(height: 20),
-      _sectionIntuitive("NUTRITION CIBLÉE", Icons.restaurant_menu, [
-        _infoBouton("Vous avez besoin d'eau: ", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
-        _infoBouton("Ratio Noix", "${(poids * 0.4).toInt()}g"),
-      ]),
-      _sectionIntuitive("ALIMENTATION (SEMAINE)", Icons.calendar_today, [
-        _infoBouton("Programme", "Lundi au Dimanche"),
-        _infoBouton("Plat", "Salade, tomates, œufs cuits, olives"),
+
+      // Calendrier Fixe
+      const Text("CALENDRIER D'ENTRAÎNEMENT", style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 10),
+      Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(color: const Color(0xFF1C1C1E), borderRadius: BorderRadius.circular(20)),
+        child: Column(
+          children: jours.map((jour) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(children: [
+              SizedBox(width: 90, child: Text(jour, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+              const Icon(Icons.fitness_center, color: Colors.amber, size: 16),
+              const SizedBox(width: 10),
+              Text(jour == "Dimanche" ? "Repos" : "$focus Intensif", style: TextStyle(color: jour == "Dimanche" ? Colors.white30 : Colors.white70)),
+            ]),
+          )).toList(),
+        ),
+      ),
+
+      const SizedBox(height: 20),
+      _sectionIntuitive("NUTRITION", Icons.restaurant_menu, [
+        _infoBouton("Plat", "Salade, tomates, œufs, olives"),
         _infoBouton("Dessert", "Banane / Orange / Pomme"),
-        _infoBouton("Timing Sport", timing),
+        _infoBouton("Timing", timing),
+        _infoBouton("Besoin d'eau", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
       ]),
+      
       _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
         _infoBouton("Repos entre séries", ossature == "Fine" ? "120 secondes" : "90 secondes"),
         _infoBouton("Exercice Clé", "Farmer Walk"),
       ]),
+      
       const SizedBox(height: 20),
       Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30))))
     ]);
