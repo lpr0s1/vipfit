@@ -1,41 +1,60 @@
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MaterialApp(
-  home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipStepApp())),
+  home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipApp())),
   debugShowCheckedModeBanner: false,
 ));
 
-class VipStepApp extends StatefulWidget {
-  const VipStepApp({super.key});
+class VipApp extends StatefulWidget {
+  const VipApp({super.key});
   @override
-  State<VipStepApp> createState() => _VipStepAppState();
+  State<VipApp> createState() => _VipAppState();
 }
 
-class _VipStepAppState extends State<VipStepApp> {
-  int currentStep = 0;
-  bool showResult = false;
+class _VipAppState extends State<VipApp> {
+  int etape = 0;
+  bool afficherPlan = false;
 
-  // --- DONNÉES DE L'ATHLÈTE COLECTÉES ÉTAPE PAR ÉTAPE ---
+  // --- QUESTIONS SIMPLES ---
   String sexe = "Homme";
   int age = 25;
   int poids = 75;
   int taille = 175;
   int reveil = 7;
-  String ossature = "Fine (Poignets / Chevilles fins)";
-  String ciblePrincipale = "Prendre de la masse autour des articulations fines";
+  String corpsFin = "Oui, j'ai les poignets ou les jambes fines";
+  String zoneAAmeliorer = "Les Bras";
+
+  // Fonction pour afficher les détails dans une jolie popup VIP
+  void _ouvrirPopup(String titre, String texte) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: Text(titre, style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text(texte, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    const Color gold = Color(0xFFD4AF37);
-    const Color darkCard = Color(0xFF1C1C1E);
+    const Color orVip = Color(0xFFD4AF37);
+    const Color grisFonce = Color(0xFF1C1C1E);
 
-    // --- ALGORITHME DE SYNTHÈSE DES DONNÉES ---
-    int cal = (sexe == "Homme") ? (10 * poids + 6 * taille - 5 * age + 550) : (10 * poids + 6 * taille - 5 * age + 250);
-    int prot = (poids * 2.2).toInt();
-    int gNoix = (poids * 0.4).toInt();
-    int gPistache = (poids * 0.5).toInt();
-    int hNoix = (reveil + 3) % 24;
-    int hPistache = (reveil + 9) % 24;
+    // Calculs automatiques simples
+    int calories = (poids * 30) + 400; 
+    int proteines = poids * 2;
+    int grammesNoix = (poids * 0.4).toInt();
+    int grammesPistaches = (poids * 0.5).toInt();
+    int heureNoix = (reveil + 3) % 24;
+    int heurePistaches = (reveil + 9) % 24;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -44,171 +63,130 @@ class _VipStepAppState extends State<VipStepApp> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // BARRE DE PROGRESSION HAUT DE GAMME
+            // BARRE DE PROGRESSION
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("VIP FIT LAB", style: const TextStyle(color: gold, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1)),
-                Text(showResult ? "DIAGNOSTIC TERMINÉ" : "ÉTAPE ${currentStep + 1} / 7", style: const TextStyle(color: Colors.white30, fontSize: 11)),
+                const Text("VIP FIT LAB", style: TextStyle(color: orVip, fontWeight: FontWeight.bold, fontSize: 20)),
+                Text(afficherPlan ? "MON PLAN" : "QUESTION ${etape + 1} / 7", style: const TextStyle(color: Colors.white30, fontSize: 12)),
               ],
             ),
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: showResult ? 1.0 : (currentStep + 1) / 7,
-              backgroundColor: Colors.white10,
-              valueColor: const AlwaysStoppedAnimation<Color>(gold),
-              minHeight: 2,
-            ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
-            // ZONE DYNAMIQUE (QUESTION UNIQUE OU RÉSULTAT)
+            // ZONE DYNAMIQUE
             Expanded(
               child: ListView(
                 children: [
-                  if (!showResult) ...[
-                    // --- ÉTAPE 0 : SEXE ---
-                    if (currentStep == 0) _buildStepCard(
-                      Icons.person, "QUEL EST VOTRE SEXE BIOLOGIQUE ?",
-                      DropdownButton<String>(
-                        value: sexe, dropdownColor: darkCard, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                        isExpanded: true, underline: Container(height: 1, color: gold),
-                        items: ["Homme", "Femme"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                        onChanged: (v) => setState(() => sexe = v!),
-                      ),
-                    ),
+                  if (!afficherPlan) ...[
+                    // --- ÉTAPES DE QUESTIONS (UNE PAR UNE) ---
+                    if (etape == 0) _tuileQuestion("ÊTES-VOUS UN HOMME OU UNE FEMME ?", DropdownButton<String>(
+                      value: sexe, dropdownColor: grisFonce, isExpanded: true, style: const TextStyle(color: Colors.white, fontSize: 16),
+                      items: ["Homme", "Femme"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                      onChanged: (v) => setState(() => sexe = v!),
+                    )),
 
-                    // --- ÉTAPE 1 : ÂGE ---
-                    if (currentStep == 1) _buildStepCard(
-                      Icons.cake, "QUEL EST VOTRE ÂGE ?",
-                      _counterRow(age, (v) => setState(() => age = v), "ans"),
-                    ),
+                    if (etape == 1) _tuileQuestion("QUEL EST VOTRE ÂGE ?", _boutonsPlusMoins(age, (v) => setState(() => age = v), "ans")),
+                    if (etape == 2) _tuileQuestion("QUEL EST VOTRE POIDS ?", _boutonsPlusMoins(poids, (v) => setState(() => poids = v), "kg")),
+                    if (etape == 3) _tuileQuestion("QUEL EST VOTRE TAILLE ?", _boutonsPlusMoins(taille, (v) => setState(() => taille = v), "cm")),
+                    if (etape == 4) _tuileQuestion("À QUELLE HEURE VOUS RÉVEILLEZ-VOUS ?", _boutonsPlusMoins(reveil, (v) => setState(() => reveil = v), "h00")),
 
-                    // --- ÉTAPE 2 : POIDS ---
-                    if (currentStep == 2) _buildStepCard(
-                      Icons.scale, "QUEL EST VOTRE POIDS ACTUEL ?",
-                      _counterRow(poids, (v) => setState(() => poids = v), "kg"),
-                    ),
+                    if (etape == 5) _tuileQuestion("AVEZ-VOUS LES ARTICULATIONS FINES ?", DropdownButton<String>(
+                      value: corpsFin, dropdownColor: grisFonce, isExpanded: true, style: const TextStyle(color: Colors.white, fontSize: 14),
+                      items: ["Oui, j'ai les poignets ou les jambes fines", "Non, j'ai une morphologie normale"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                      onChanged: (v) => setState(() => corpsFin = v!),
+                    )),
 
-                    // --- ÉTAPE 3 : TAILLE ---
-                    if (currentStep == 3) _buildStepCard(
-                      Icons.straighten, "QUEL EST VOTRE TAILLE ?",
-                      _counterRow(taille, (v) => setState(() => taille = v), "cm"),
-                    ),
-
-                    // --- ÉTAPE 4 : RÉVEIL ---
-                    if (currentStep == 4) _buildStepCard(
-                      Icons.alarm, "À QUELLE HEURE VOUS RÉVEILLEZ-VOUS ?",
-                      _counterRow(reveil, (v) => setState(() => reveil = v), "h00"),
-                    ),
-
-                    // --- ÉTAPE 5 : OSSATURE ---
-                    if (currentStep == 5) _buildStepCard(
-                      Icons.gavel, "QUELLE EST VOTRE STRUCTURE OSSEUSE ?",
-                      DropdownButton<String>(
-                        value: ossature, dropdownColor: darkCard, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                        isExpanded: true, underline: Container(height: 1, color: gold),
-                        items: ["Fine (Poignets / Chevilles fins)", "Intermédiaire", "Lourde / Épaisse"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                        onChanged: (v) => setState(() => ossature = v!),
-                      ),
-                    ),
-
-                    // --- ÉTAPE 6 : OBJECTIF TARGET ---
-                    if (currentStep == 6) _buildStepCard(
-                      Icons.ads_click, "QUEL EST VOTRE OBJECTIF PRIORITAIRE ?",
-                      DropdownButton<String>(
-                        value: ciblePrincipale, dropdownColor: darkCard, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                        isExpanded: true, underline: Container(height: 1, color: gold),
-                        items: [
-                          "Prendre de la masse autour des articulations fines",
-                          "Élargir le dos et casser le profil ectomorphe",
-                          "Prendre du volume rapidement sur les bras (Biceps/Triceps)",
-                          "Développer l'épaisseur des cuisses et mollets"
-                        ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                        onChanged: (v) => setState(() => ciblePrincipale = v!),
-                      ),
-                    ),
+                    if (etape == 6) _tuileQuestion("QUELLE ZONE VOULEZ-VOUS AMÉLIORER ?", DropdownButton<String>(
+                      value: zoneAAmeliorer, dropdownColor: grisFonce, isExpanded: true, style: const TextStyle(color: Colors.white, fontSize: 16),
+                      items: ["Les Bras", "Les Jambes", "Le Dos"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                      onChanged: (v) => setState(() => zoneAAmeliorer = v!),
+                    )),
                   ] else ...[
                     // =========================================================
-                    // === VUE PLAN EN 4 PARTIES (SCREENSHOT COMPACT) ===
+                    // === PLAN DE RÉSULTAT BIEN RANGÉ (SANS TEXTE SOURD) ===
                     // =========================================================
                     
-                    // PARTIE 1
-                    _sectionHeader("PARTIE 1 : DIAGNOSTIC BIOMÉTRIQUE"),
-                    _rowInfo("Profil Analysé", "$sexe, $age ans, $taille cm"),
-                    _rowInfo("Indice de Structure", ossature),
-                    _rowInfo("Priorité Détectée", ciblePrincipale),
+                    // CATEGORIE 1 : ALIMENTATION
+                    _titreCategorie("🍏 CATEGORIE 1 : NOURRITURE"),
+                    _ligneSimple("Énergie par jour", "$calories Calories"),
+                    _ligneSimple("Protéines (médicament du muscle)", "${proteines}g"),
                     
-                    const Divider(color: Colors.white10, height: 30),
+                    const SizedBox(height: 10),
+                    _boutonSavoirPlus(
+                      "Conseil Noix ($grammesNoix g à ${heureNoix}h00)", 
+                      "À prendre à ${heureNoix}h00.\n\nPourquoi ? Les noix de Grenoble contiennent des bons gras qui protègent et lubrifient tes poignets et tes coudes fins pour éviter d'avoir mal en portant lourd.",
+                    ),
+                    _boutonSavoirPlus(
+                      "Conseil Pistaches ($grammesPistaches g à ${heurePistaches}h00)", 
+                      "À prendre à ${heurePistaches}h00 (30 minutes avant l'effort).\n\nPourquoi ? Les pistaches dilatent tes vaisseaux sanguins. Cela va forcer le sang à aller se bloquer dans tes bras ou tes jambes pour accélérer la prise de muscle.",
+                    ),
 
-                    // PARTIE 2
-                    _sectionHeader("PARTIE 2 : MACRONUTRITION & LIPIDES UTILES"),
-                    _rowInfo("Apport de Masse", "$cal kcal / jour"),
-                    _rowInfo("Protéines de Synthèse", "${prot}g / jour"),
+                    const SizedBox(height: 25),
+                    const Divider(color: Colors.white10),
+                    const SizedBox(height: 15),
+
+                    // CATEGORIE 2 : SPORT
+                    _titreCategorie("💪 CATEGORIE 2 : SPORT & ENTRAÎNEMENT"),
+                    _ligneSimple("Votre objectif", "Développer $zoneAAmeliorer"),
+                    _ligneSimple("Morphologie", corpsFin.contains("Oui") ? "Ossature fine" : "Ossature normale"),
                     
-                    const Divider(color: Colors.white10, height: 30),
-
-                    // PARTIE 3
-                    _sectionHeader("PARTIE 3 : TIMING CHRONO-NUTRITION"),
-                    _timingRow(hNoix, "Collation Noix ($gNoix g)", "Noix de Grenoble riches en Oméga-3. Indispensable pour ton ossature: renforce et lubrifie la structure tendineuse des poignets fins avant les charges lourdes."),
-                    _timingRow(hPistache, "Fenêtre de Congestion ($gPistache g)", "Pistaches crues 30 min avant l'effort. Sa concentration en L-Arginine force l'afflux d'oxyde nitrique pour dilater et forcer la masse musculaire autour de tes membres fins."),
-
-                    const Divider(color: Colors.white10, height: 30),
-
-                    // PARTIE 4
-                    _sectionHeader("PARTIE 4 : PROTOCOLE MÉCANIQUE CIBLÉ"),
-                    if (ossature.contains("Fine") || ciblePrincipale.contains("articulations")) ...[
-                      _exoBlock("Focus Avant-Bras & Poignets (Épaississement)", "• Curl inversé barre EZ (4x12) + Extensions poignets assis (3x20)\n• Extensions statiques suspendues ou Farmer Walk lourd pour le grip."),
-                    ],
-                    if (ciblePrincipale.contains("dos") || ciblePrincipale.contains("ectomorphe")) ...[
-                      _exoBlock("Focus Largeur Postérieure", "• Tractions strictes prise large pronation (4xMax)\n• Rowing barre buste penché (4x8) + Oiseau haltères (3x15)"),
-                    ],
-                    if (ciblePrincipale.contains("bras")) ...[
-                      _exoBlock("Focus Hypertrophie des Bras", "• SuperSet : Curl incliné haltères + Dips barres parallèles lestés (4x10)\n• Curl marteau lourd assis (3x12) pour l'épaisseur du long supinateur."),
-                    ],
-                    if (ciblePrincipale.contains("cuisses") || ossature.contains("Fine")) ...[
-                      _exoBlock("Focus Extension Bas du Corps", "• Squat lourd complet (4x6) + Soulevé de terre jambes tendues (3x8)\n• Extensions mollets debout (5x20) avec temps d'arrêt de 2 secondes en bas."),
-                    ],
+                    const SizedBox(height: 10),
+                    if (corpsFin.contains("Oui")) _boutonSavoirPlus(
+                      "🛡️ Exercice spécial Poignets / Articulations",
+                      "Puisque tu as les poignets fins, fais cet exercice en priorité :\n\n• La marche du fermier (Farmer Walk) : Prends deux haltères très lourds dans tes mains et marche le plus longtemps possible. Cela va épaissir tes avant-bras et solidifier tes poignets.",
+                    ),
+                    
+                    if (zoneAAmeliorer == "Les Bras") _boutonSavoirPlus(
+                      "🏋️ Le programme pour les BRAS",
+                      "Fais ces exercices 2 fois par semaine :\n\n1. Curl incliné avec haltères (4 séries de 10 répétitions) pour le volume du biceps.\n2. Dips entre deux bancs (4 séries de 10 répétitions) pour étirer et gonfler le triceps.",
+                    ),
+                    if (zoneAAmeliorer == "Les Jambes") _boutonSavoirPlus(
+                      "🏋️ Le programme pour les JAMBES",
+                      "Fais ces exercices 1 fois par semaine :\n\n1. Squat guidé ou libre (4 séries de 8 répétitions) pour prendre de la masse sur les cuisses.\n2. Montées sur pointes debout (5 séries de 20 répétitions) avec un arrêt de 2 secondes en bas pour faire grossir les mollets.",
+                    ),
+                    if (zoneAAmeliorer == "Le Dos") _boutonSavoirPlus(
+                      "🏋️ Le programme pour le DOS",
+                      "Fais ces exercices 2 fois par semaine :\n\n1. Tractions à la barre (4 séries du maximum de répétitions possible) pour élargir la carrure.\n2. Rowing assis à la poulie (4 séries de 10 répétitions) pour rendre le dos plus épais.",
+                    ),
                   ]
                 ],
               ),
             ),
 
-            // BARRE DE NAVIGATION INFÉRIEURE
-            const SizedBox(height: 20),
+            // BOUTONS DE NAVIGATION
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (currentStep > 0 || showResult)
+                if (etape > 0 || afficherPlan)
                   Expanded(
                     child: TextButton(
                       onPressed: () {
                         setState(() {
-                          if (showResult) {
-                            showResult = false;
-                            currentStep = 6;
+                          if (afficherPlan) {
+                            afficherPlan = false;
+                            etape = 6;
                           } else {
-                            currentStep--;
+                            etape--;
                           }
                         });
                       },
                       child: const Text("RETOUR", style: TextStyle(color: Colors.white30, fontWeight: FontWeight.bold)),
                     ),
                   ),
-                if (currentStep > 0 || showResult) const SizedBox(width: 20),
+                if (etape > 0 || afficherPlan) const SizedBox(width: 15),
                 Expanded(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: gold, minimumSize: const Size(double.infinity, 50), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+                    style: ElevatedButton.styleFrom(backgroundColor: orVip, minimumSize: const Size(double.infinity, 50), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
                     onPressed: () {
                       setState(() {
-                        if (currentStep < 6) {
-                          currentStep++;
+                        if (etape < 6) {
+                          etape++;
                         } else {
-                          showResult = true;
+                          afficherPlan = true;
                         }
                       });
                     },
                     child: Text(
-                      currentStep == 6 && !showResult ? "GÉNÉRER" : (showResult ? "CONSERVÉ" : "SUIVANT"),
+                      etape == 6 && !afficherPlan ? "VOIR MON PLAN" : (afficherPlan ? "ENREGISTRÉ" : "SUIVANT"),
                       style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -221,64 +199,53 @@ class _VipStepAppState extends State<VipStepApp> {
     );
   }
 
-  // --- BLOCS DE COMPOSANTS "FLAT" (ZÉRO CHARGE XCODE) ---
-  Widget _buildStepCard(IconData icon, String title, Widget action) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: const Color(0xFFD4AF37), size: 40),
-        const SizedBox(height: 15),
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-        const SizedBox(height: 30),
-        action,
-      ],
-    );
-  }
-
-  Widget _counterRow(int value, Function(int) onUpdate, String unit) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text("$value $unit", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-        Row(
-          children: [
-            IconButton(icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFD4AF37), size: 28), onPressed: () => onUpdate(value - 1)),
-            const SizedBox(width: 10),
-            IconButton(icon: const Icon(Icons.add_circle_outline, color: Color(0xFFD4AF37), size: 28), onPressed: () => onUpdate(value + 1)),
-          ],
-        )
-      ],
-    );
-  }
-
-  Widget _sectionHeader(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Text(text, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-  );
-
-  Widget _rowInfo(String label, String val) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)), Text(val, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))]),
-  );
-
-  Widget _timingRow(int heure, String title, String desc) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("• ${heure}h00 | $title", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-        const SizedBox(height: 2),
-        Text(desc, style: const TextStyle(color: Colors.white38, fontSize: 11, height: 1.4)),
-      ],
-    ),
-  );
-
-  Widget _exoBlock(String zone, String liste) => Column(
+  // --- PETITS BLOCS DE CONSTRUCTIONS PRÉ-FABRIQUÉS POUR XCODE ---
+  Widget _tuileQuestion(String titre, Widget action) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(zone, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-      const SizedBox(height: 4),
-      Text(liste, style: const TextStyle(color: Colors.white54, fontSize: 11, height: 1.4)),
+      const SizedBox(height: 20),
+      Text(titre, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+      const SizedBox(height: 25),
+      action,
     ],
+  );
+
+  Widget _boutonsPlusMoins(int valeur, Function(int) auClic, String unite) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text("$valeur $unite", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+      Row(
+        children: [
+          IconButton(icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFD4AF37), size: 30), onPressed: () => auClic(valeur - 1)),
+          const SizedBox(width: 15),
+          IconButton(icon: const Icon(Icons.add_circle_outline, color: Color(0xFFD4AF37), size: 30), onPressed: () => auClic(valeur + 1)),
+        ],
+      )
+    ],
+  );
+
+  Widget _titreCategorie(String nom) => Padding(
+    padding: const EdgeInsets.only(top: 15, bottom: 12),
+    child: Text(nom, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1)),
+  );
+
+  Widget _ligneSimple(String gauche, String droite) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(gauche, style: const TextStyle(color: Colors.white60, fontSize: 13)), Text(droite, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))]),
+  );
+
+  Widget _boutonSavoirPlus(String titreBouton, String textePopup) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: ElevatedButton(
+      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1C1C1E), minimumSize: const Size(double.infinity, 45), alignment: Alignment.centerLeft, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero)),
+      onPressed: () => _ouvrirPopup(titreBouton, textePopup),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(titreBouton, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          const Text("En savoir +", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    ),
   );
 }
