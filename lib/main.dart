@@ -30,19 +30,28 @@ class _VipAppState extends State<VipApp> {
   }
 
   void _showHelpDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
-        title: const Text("Help", style: TextStyle(color: Colors.white)),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text("Version: 0.0.1", style: TextStyle(color: Colors.white54)),
-          const SizedBox(height: 20),
-          ElevatedButton(onPressed: _launchTelegram, child: const Text("Rejoindre le groupe", style: TextStyle(color: Color(0xFF24A1DE)))),
-        ]),
-      ),
-    );
-  }
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF1C1C1E),
+      title: const Text("Help", style: TextStyle(color: Colors.white)),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Text("Version: 0.0.1", style: TextStyle(color: Colors.white54)),
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: _launchTelegram, 
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF24A1DE),
+          ),
+          child: const Text(
+            "Rejoindre le groupe", 
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ]),
+    ),
+  );
+}
 
   Map<String, String> _getRepasPourJour(String jour) {
     bool isPriseDeMasse = poids < 78;
