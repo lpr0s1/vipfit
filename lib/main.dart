@@ -232,7 +232,7 @@ class _VipAppState extends State<VipApp> {
       ),
       const SizedBox(height: 20),
 
-      _sectionIntuitive("NUTRITION CIBLÉE", Icons.water_drop, [
+      _sectionIntuitive("OBJECTIF", Icons.water_drop, [
         _infoBouton("Eau à rajouter :", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)} L"),
         _infoBouton("Ratio Noix :", "${(poids * 0.4).toInt()} g"),
       ]),
