@@ -310,7 +310,7 @@ class _VipAppState extends State<VipApp> {
 
   Widget _getStepContent() {
     final steps = [
-      _field("Ton Sexe", _chips(["Homme", "Femme", "Dinosor"], sexe, (v) => setState(() => sexe = v))),
+      _field("Ton Sexe", _chips(["Homme", "Femme", "Batman"], sexe, (v) => setState(() => sexe = v))),
       _field("Ton Âge", _ctrl(age, (v) => setState(() => age = v))),
       _field("Ton Poids", _ctrl(poids, (v) => setState(() => poids = v))),
       _field("Ta Taille", _ctrl(taille, (v) => setState(() => taille = v))),
