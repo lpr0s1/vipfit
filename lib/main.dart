@@ -18,7 +18,6 @@ class _VipAppState extends State<VipApp> {
   String sexe = "Homme", ossature = "Fine", focus = "Bras";
   int age = 20, poids = 75, taille = 180, reveil = 8, eauActuelle = 2;
 
-  // --- LOGIQUE DE PERSONNALISATION ---
   String get feedbackMorpho => (poids < 65) 
       ? "Profil Ectomorphe : Priorité à la suralimentation et aux charges lourdes." 
       : "Profil Endomorphe : Priorité à la densité et à l'hydratation constante.";
@@ -51,7 +50,7 @@ class _VipAppState extends State<VipApp> {
 
   Widget _getStepContent() {
     final steps = [
-      _field("Ton Sexe", _chips(["Homme", "Femme"], sexe, (v) => setState(() => sexe = v))),
+      _field("Ton Sexe", _chips(["Homme", "Femme", "Arbre"], sexe, (v) => setState(() => sexe = v))),
       _field("Ton Âge", _ctrl(age, (v) => setState(() => age = v))),
       _field("Ton Poids (${poids < 65 ? 'Léger' : 'Lourd'})", _ctrl(poids, (v) => setState(() => poids = v))),
       _field("Ta Taille", _ctrl(taille, (v) => setState(() => taille = v))),
@@ -76,7 +75,6 @@ class _VipAppState extends State<VipApp> {
     Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30))))
   ]);
 
-  // --- DESIGN SYSTÈME ---
   Widget _section(String title, List<Widget> children) => Container(
     margin: const EdgeInsets.only(bottom: 25),
     padding: const EdgeInsets.all(25),
