@@ -44,7 +44,6 @@ class _VipAppState extends State<VipApp> {
     );
   }
 
-  // --- GÉNÉRATEUR DE REPAS VARIÉS ET ADAPTÉS AU PROFIL ---
   Map<String, String> _getRepasPourJour(String jour) {
     bool isPriseDeMasse = poids < 78;
 
@@ -99,7 +98,7 @@ class _VipAppState extends State<VipApp> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("VARIATIONS DE LA SEMAINE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text("ALIMENTATION DE LA SEMAINE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
                 IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
               ],
             ),
@@ -127,7 +126,7 @@ class _VipAppState extends State<VipApp> {
                           Row(children: [
                             Icon(Icons.fitness_center, color: Colors.white54, size: 16),
                             const SizedBox(width: 8),
-                            const Text("SÉANCE DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text("SÉANCE DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
                           Text(jour == "Dimanche" ? "Repos complet" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -136,37 +135,37 @@ class _VipAppState extends State<VipApp> {
                           Row(children: [
                             Icon(Icons.restaurant, color: Colors.white54, size: 16),
                             const SizedBox(width: 8),
-                            const Text("PLAT PRINCIPAL", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text("PLAT PRINCIPAL", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutritionJour["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          Text(nutritionJour["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 7, height: 1.4)),
                           
                           const SizedBox(height: 20),
                           Row(children: [
                             Icon(Icons.apple, color: Colors.white54, size: 16),
                             const SizedBox(width: 8),
-                            const Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutritionJour["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          Text(nutritionJour["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 7, height: 1.4)),
                           
                           const SizedBox(height: 20),
                           Row(children: [
                             Icon(Icons.cookie, color: Colors.white54, size: 16),
                             const SizedBox(width: 8),
-                            const Text("COLLATION DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text("COLLATION DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutritionJour["collation"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          Text(nutritionJour["collation"]!, style: const TextStyle(color: Colors.white70, fontSize: 7, height: 1.4)),
 
                           const SizedBox(height: 20),
                           Row(children: [
                             Icon(Icons.access_time, color: Colors.white54, size: 16),
                             const SizedBox(width: 8),
-                            const Text("TIMING REPAS", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text("TIMING REPAS", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 14)),
+                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 7)),
                         ],
                       ),
                     ),
