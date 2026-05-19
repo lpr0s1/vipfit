@@ -17,9 +17,9 @@ class _VipAppState extends State<VipApp> {
   
   // Données de base
   String sexe = "Homme", ossature = "Fine", focus = "Bras";
-  int age = 25, poids = 75, taille = 175, reveil = 7, eauActuelle = 2;
+  int age = 20, poids = 75, taille = 180, reveil = 8, eauActuelle = 2;
 
-  // Popup de détail (Style iOS Modal)
+  // Popup de détail
   void _showDetail(String title, String content) {
     showModalBottomSheet(
       context: context,
@@ -41,9 +41,9 @@ class _VipAppState extends State<VipApp> {
   Widget build(BuildContext context) {
     return Scaffold(backgroundColor: Colors.black, body: Column(children: [
       Padding(padding: const EdgeInsets.all(20), child: Row(children: [
-        ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.asset('assets/app_icon.png', width: 32, height: 32)),
+        ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.asset('assets/app_icon.png', width: 35, height: 35)),
         const SizedBox(width: 12),
-        const Text("VIP FIT ELITE", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold))
+        const Text("VIP FIT", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold))
       ])),
       Expanded(child: showResults ? _buildResults() : _buildStepper()),
     ]));
@@ -64,7 +64,7 @@ class _VipAppState extends State<VipApp> {
 
   Widget _getStepContent() {
     final steps = [
-      _field("Sexe", _dropdown(["Homme", "Femme"], sexe, (v) => setState(() => sexe = v!))),
+      _field("Sexe", _dropdown(["Homme", "Femme", "Arbre"], sexe, (v) => setState(() => sexe = v!))),
       _field("Âge", _ctrl(age, (v) => setState(() => age = v))),
       _field("Poids (${poids < 65 ? 'Léger' : 'Lourd'})", _ctrl(poids, (v) => setState(() => poids = v))),
       _field("Taille (${taille < 170 ? 'Petit' : 'Grand'})", _ctrl(taille, (v) => setState(() => taille = v))),
