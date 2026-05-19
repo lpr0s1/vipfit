@@ -29,9 +29,9 @@ class _VipAppState extends State<VipApp> {
         padding: const EdgeInsets.all(24),
         height: 300,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(color: Colors.amber, fontSize: 23, fontWeight: FontWeight.bold)),
           const SizedBox(height: 15),
-          Text(content, style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.5)),
+          Text(content, style: const TextStyle(color: Colors.white70, fontSize: 18, height: 1.5)),
         ]),
       ),
     );
@@ -58,7 +58,7 @@ class _VipAppState extends State<VipApp> {
         onPressed: () => setState(() => etape < 7 ? etape++ : showResults = true),
         child: Text(etape == 7 ? "GÉNÉRER MON PROTOCOLE" : "Continuer"),
       ),
-      const SizedBox(height: 20)
+      const SizedBox(height: 24)
     ]));
   }
 
@@ -109,7 +109,7 @@ class _VipAppState extends State<VipApp> {
     onTap: () => _showDetail(title, detail),
   );
 
-  Widget _field(String label, Widget child) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Colors.white54)), const SizedBox(height: 10), child]);
+  Widget _field(String label, Widget child) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Colors.white54, fontSize: 30)), const SizedBox(height: 12), child]);
   Widget _ctrl(int v, Function(int) f) => Row(children: [IconButton(onPressed: () => f(v-1), icon: const Icon(Icons.remove_circle, color: Colors.white)), Text("$v", style: const TextStyle(color: Colors.white, fontSize: 50)), IconButton(onPressed: () => f(v+1), icon: const Icon(Icons.add_circle, color: Colors.white))]);
   Widget _dropdown(List<String> items, String val, Function(String?) f) => DropdownButton<String>(value: val, dropdownColor: Colors.black, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white)))).toList(), onChanged: f, isExpanded: true);
 }
