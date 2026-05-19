@@ -46,9 +46,8 @@ class _VipAppState extends State<VipApp> {
 
   // --- GÉNÉRATEUR DE REPAS VARIÉS ET ADAPTÉS AU PROFIL ---
   Map<String, String> _getRepasPourJour(String jour) {
-    bool isPriseDeMasse = poids < 78; // Ajustement automatique des portions/calories
+    bool isPriseDeMasse = poids < 78;
 
-    // Roulement des menus sur la semaine pour éviter la monotonie
     if (jour == "Lundi" || jour == "Jeudi") {
       return {
         "plat": isPriseDeMasse 
@@ -74,9 +73,8 @@ class _VipAppState extends State<VipApp> {
         "collation": "Smoothie maison : Lait d'amande, beurre de cacahuète et flocons d'avoine."
       };
     } else {
-      // Dimanche (Jour de repos)
       return {
-        "plat": "Riz cantonais revisité (Riz, petits pois, dés de jambon, œufs brouillés), salade verte.",
+        "plat": "Riz cantonais revisité (Riz, petits pois, dés de jambon, œufs brouillés) et salade verte.",
         "dessert": "Un bol de fraises ou de baies rouges (Antioxydants puissants).",
         "collation": "Une poignée de noix de Grenoble et un thé vert."
       };
@@ -126,44 +124,46 @@ class _VipAppState extends State<VipApp> {
                           Text(jour, style: const TextStyle(color: Colors.amber, fontSize: 24, fontWeight: FontWeight.bold)),
                           const Divider(color: Colors.white10, height: 25),
                           
-                          const Row(children: [
+                          Row(children: [
                             Icon(Icons.fitness_center, color: Colors.white54, size: 16),
-                            SizedBox(width: 8),
-                            Text("SÉANCE DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            const Text("SÉANCE DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(jour == "Dimanche" ? "Repos complet (Récupération)" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(jour == "Dimanche" ? "Repos complet" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                           
                           const SizedBox(height: 20),
-                          const Row(children: [
+                          Row(children: [
                             Icon(Icons.restaurant, color: Colors.white54, size: 16),
-                            SizedBox(width: 8),
-                            Text("PLAT PRINCIPAL", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            const Text("PLAT PRINCIPAL", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
                           Text(nutritionJour["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
                           
                           const SizedBox(height: 20),
-                          const Row(children: [
+                          Row(children: [
                             Icon(Icons.apple, color: Colors.white54, size: 16),
-                            SizedBox(width: 8),
-                            Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            const Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
                           Text(nutritionJour["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
                           
                           const SizedBox(height: 20),
-                          const Row(children: [Icons.cookie, color: Colors.white54, size: 16],),
-                          const SizedBox(width: 8),
-                          const Text("COLLATION DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          Row(children: [
+                            Icon(Icons.cookie, color: Colors.white54, size: 16),
+                            const SizedBox(width: 8),
+                            const Text("COLLATION DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ]),
                           const SizedBox(height: 6),
                           Text(nutritionJour["collation"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
 
                           const SizedBox(height: 20),
-                          const Row(children: [
+                          Row(children: [
                             Icon(Icons.access_time, color: Colors.white54, size: 16),
-                            SizedBox(width: 8),
-                            Text("TIMING REPAS", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            const Text("TIMING REPAS", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
                           Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 14)),
@@ -210,7 +210,7 @@ class _VipAppState extends State<VipApp> {
 
   Widget _buildResults() {
     String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
-    Map<String, String> nutritionAujourdhui = _getRepasPourJour("Lundi"); // Base exemple pour l'accueil
+    Map<String, String> nutritionAujourdhui = _getRepasPourJour("Lundi");
     
     return ListView(padding: const EdgeInsets.all(25), children: [
       const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
@@ -221,12 +221,12 @@ class _VipAppState extends State<VipApp> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
           decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(20)),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.calendar_month, color: Colors.black, size: 24),
-              SizedBox(width: 12),
-              Text("CALENDRIER DES REPAS DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              const SizedBox(width: 12),
+              const Text("CALENDRIER DES REPAS DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ],
           ),
         ),
@@ -256,10 +256,10 @@ class _VipAppState extends State<VipApp> {
             margin: const EdgeInsets.symmetric(vertical: 5),
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(color: Colors.amber.withOpacity(0.05), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.amber.withOpacity(0.3), width: 1)),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Équipement requis à la maison", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                const Text("Équipement requis à la maison", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                 Icon(Icons.open_in_new, color: Colors.amber, size: 18),
               ],
             ),
