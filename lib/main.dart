@@ -232,19 +232,19 @@ class _VipAppState extends State<VipApp> {
       ),
       const SizedBox(height: 20),
 
-      _sectionIntuitive("OBJECTIF", Icons.water_drop, [
-        _infoBouton("Eau à rajouter :", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)} L"),
-        _infoBouton("Ratio Noix :", "${(poids * 0.4).toInt()} g"),
+      _sectionIntuitive("A FAIRE", Icons.water_drop, [
+        _infoBouton("Eau en plus a boire :", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)} L"),
+        _infoBouton("Noix ou cacahuètes non salés :", "${(poids * 0.4).toInt()} g"),
       ]),
 
-      _sectionIntuitive("EXEMPLE DE REPAS", Icons.restaurant_menu, [
-        _infoTextBloque("Plat type sain & complet", nutritionAujourdhui["plat"]!),
+      _sectionIntuitive("REPAS SAIN", Icons.restaurant_menu, [
+        _infoTextBloque("Plat sain & complet", nutritionAujourdhui["plat"]!),
         _infoTextBloque("Fruits & Énergie (Dessert)", nutritionAujourdhui["dessert"]!),
         _infoBouton("Timing idéal :", timing),
       ]),
       
-      _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
-        _infoBouton("Repos requis :", ossature == "Fine" ? "120 secondes" : "90 secondes"),
+      _sectionIntuitive("PLAN SPORTIF ($focus)", Icons.fitness_center, [
+        _infoBouton("Repos requis :", ossature == "Fine" ? "3 minutes" : "2 minutes"),
         _infoBouton("Exercice clé :", "Farmer Walk"),
       ]),
 
@@ -258,7 +258,7 @@ class _VipAppState extends State<VipApp> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Équipement requis à la maison", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                const Text("Équipement a la maison", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                 Icon(Icons.open_in_new, color: Colors.amber, size: 18),
               ],
             ),
