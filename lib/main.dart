@@ -24,6 +24,21 @@ class _VipAppState extends State<VipApp> {
     if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        title: const Text("Help", style: TextStyle(color: Colors.white)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text("Version: 0.0.1", style: TextStyle(color: Colors.white54)),
+          const SizedBox(height: 20),
+          ElevatedButton(onPressed: _launchTelegram, child: const Text("Rejoindre Telegram")),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(backgroundColor: Colors.black, body: Column(children: [
@@ -33,12 +48,7 @@ class _VipAppState extends State<VipApp> {
         const SizedBox(width: 15),
         const Text("VIP FIT", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
         const Spacer(),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.help_outline, color: Colors.amber, size: 30),
-          color: const Color(0xFF1C1C1E),
-          onSelected: (value) => _launchTelegram(),
-          itemBuilder: (context) => [const PopupMenuItem(value: "help", child: Text("Help - Telegram", style: TextStyle(color: Colors.white)))],
-        )
+        IconButton(icon: const Icon(Icons.help_outline, color: Colors.amber, size: 30), onPressed: _showHelpDialog)
       ])),
       Expanded(child: showResults ? _buildResults() : _buildStepper()),
     ]));
@@ -57,20 +67,29 @@ class _VipAppState extends State<VipApp> {
     ]));
   }
 
-  Widget _buildResults() => ListView(padding: const EdgeInsets.all(25), children: [
-    const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-    const SizedBox(height: 20),
-    _sectionIntuitive("NUTRITION CIBLÉE", Icons.restaurant_menu, [
-      _infoBouton("Vous avez besoin d'eau: ", "${( (poids*0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
-      _infoBouton("Ratio Noix", "${(poids * 0.4).toInt()}g"),
-    ]),
-    _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
-      _infoBouton("Repos entre séries", ossature == "Fine" ? "120 secondes" : "90 secondes"),
-      _infoBouton("Exercice Clé", "Farmer Walk"),
-    ]),
-    const SizedBox(height: 20),
-    Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30))))
-  ]);
+  Widget _buildResults() {
+    String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
+    return ListView(padding: const EdgeInsets.all(25), children: [
+      const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 20),
+      _sectionIntuitive("NUTRITION CIBLÉE", Icons.restaurant_menu, [
+        _infoBouton("Vous avez besoin d'eau: ", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
+        _infoBouton("Ratio Noix", "${(poids * 0.4).toInt()}g"),
+      ]),
+      _sectionIntuitive("ALIMENTATION (SEMAINE)", Icons.calendar_today, [
+        _infoBouton("Programme", "Lundi au Dimanche"),
+        _infoBouton("Plat", "Salade, tomates, œufs cuits, olives"),
+        _infoBouton("Dessert", "Banane / Orange / Pomme"),
+        _infoBouton("Timing Sport", timing),
+      ]),
+      _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
+        _infoBouton("Repos entre séries", ossature == "Fine" ? "120 secondes" : "90 secondes"),
+        _infoBouton("Exercice Clé", "Farmer Walk"),
+      ]),
+      const SizedBox(height: 20),
+      Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30))))
+    ]);
+  }
 
   Widget _sectionIntuitive(String title, IconData icon, List<Widget> children) => ExpansionTile(
     leading: Icon(icon, color: Colors.amber),
@@ -99,7 +118,7 @@ class _VipAppState extends State<VipApp> {
       _field("Ton Poids", _ctrl(poids, (v) => setState(() => poids = v))),
       _field("Ta Taille", _ctrl(taille, (v) => setState(() => taille = v))),
       _field("Réveil", _ctrl(reveil, (v) => setState(() => reveil = v))),
-      _field("Eau (L)", _ctrl(eauActuelle, (v) => setState(() => eauActuelle = v))),
+      _field("Combien de litre d'eau vous buvez par jour (environ) ?", _ctrl(eauActuelle, (v) => setState(() => eauActuelle = v))),
       _field("Structure", _chips(["Fine", "Normale"], ossature, (v) => setState(() => ossature = v))),
       _field("Objectif", _chips(["Bras", "Jambes", "Dos"], focus, (v) => setState(() => focus = v))),
     ];
