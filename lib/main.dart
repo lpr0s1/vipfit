@@ -44,9 +44,36 @@ class _VipAppState extends State<VipApp> {
     );
   }
 
+  // --- GÉNÉRATEUR REPAS INTELLIGENT ET PERSONNALISÉ ---
+  Map<String, String> _genererNutritionProfil() {
+    if (poids < 65) {
+      // Profil ectomorphe / Prise de masse
+      return {
+        "plat": "Riz basmati, pavé de saumon, avocat entier, œufs mollets et huile d'olive.",
+        "dessert": "Banane mûre avec une poignée de noix de cajou (haute densité calorique).",
+        "collation": "Shaker d'avoine instantané, miel et 3 œufs nature 1h avant l'effort."
+      };
+    } else if (poids > 85) {
+      // Profil lourd / Sèche ou Recomposition
+      return {
+        "plat": "Blanc de poulet grillé, brocolis vapeur, salade de tomates, olives noires et blancs d'œufs.",
+        "dessert": "Pomme verte ou demi-pamplemousse (excellent coupe-faim riche en vitamines).",
+        "collation": "Amandes et thé vert sans sucre 45min avant l'effort."
+      };
+    } else {
+      // Profil intermédiaire / Athlétique
+      return {
+        "plat": "Patate douce au four, steak de bœuf 5%, salade verte, œufs au plat et quelques olives vertes.",
+        "dessert": "Orange ou bol de baies/fraises (riches en antioxydants).",
+        "collation": "Une pomme et 20g de chocolat noir 85% avant le sport."
+      };
+    }
+  }
+
   void _showCalendarSheet() {
     final List<String> jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
+    Map<String, String> nutrition = _genererNutritionProfil();
 
     showModalBottomSheet(
       context: context,
@@ -62,7 +89,7 @@ class _VipAppState extends State<VipApp> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("PLANNING HEBDOMADAIRE", style: TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text("PLANNING HEBDOMADAIRE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
                 IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
               ],
             ),
@@ -74,31 +101,51 @@ class _VipAppState extends State<VipApp> {
                 itemBuilder: (context, index) {
                   String jour = jours[index];
                   return Container(
-                    width: 280,
+                    width: 300,
                     margin: const EdgeInsets.only(right: 15, bottom: 10),
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+                    decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(25), border: Border.all(color: Colors.white10)),
                     child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(jour, style: const TextStyle(color: Colors.amber, fontSize: 24, fontWeight: FontWeight.bold)),
                           const Divider(color: Colors.white10, height: 25),
-                          const Text("🏋️ SÉANCE", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 5),
-                          Text(jour == "Dimanche" ? "Repos" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          
+                          const Row(children: [
+                            Icon(Icons.fitness_center, color: Colors.white54, size: 16),
+                            SizedBox(width: 8),
+                            Text("SÉANCE", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ]),
+                          const SizedBox(height: 6),
+                          Text(jour == "Dimanche" ? "Repos complet" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          
                           const SizedBox(height: 20),
-                          const Text("🍲 PLAT RECOMMANDÉ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 5),
-                          const Text("Salade, tomates, œufs cuits (ou nature), des olives vertes, noires, peu importe", style: TextStyle(color: Colors.white, fontSize: 14)),
+                          const Row(children: [
+                            Icon(Icons.restaurant, color: Colors.white54, size: 16),
+                            SizedBox(width: 8),
+                            Text("PLAT DU PROFIL", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ]),
+                          const SizedBox(height: 6),
+                          Text(nutrition["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          
                           const SizedBox(height: 20),
-                          const Text("🍎 DESSERT (VITAMINES)", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 5),
-                          const Text("Fruits (bananes, orange, pommes)", style: TextStyle(color: Colors.white, fontSize: 14)),
+                          const Row(children: [
+                            Icon(Icons.apple, color: Colors.white54, size: 16),
+                            SizedBox(width: 8),
+                            Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ]),
+                          const SizedBox(height: 6),
+                          Text(nutrition["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          
                           const SizedBox(height: 20),
-                          const Text("⏰ TIMING ALIMENTATION", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 5),
-                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 13)),
+                          const Row(children: [
+                            Icon(Icons.access_time, color: Colors.white54, size: 16),
+                            SizedBox(width: 8),
+                            Text("TIMING REPAS", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ]),
+                          const SizedBox(height: 6),
+                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 14)),
                         ],
                       ),
                     ),
@@ -142,86 +189,105 @@ class _VipAppState extends State<VipApp> {
 
   Widget _buildResults() {
     String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
+    Map<String, String> nutrition = _genererNutritionProfil();
     
     return ListView(padding: const EdgeInsets.all(25), children: [
       const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 20),
+      const SizedBox(height: 25),
 
-      // Bouton d'accès au grand calendrier horizontal
+      // Bouton Calendrier épuré
       GestureDetector(
         onTap: _showCalendarSheet,
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
           decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(20)),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.calendar_month, color: Colors.black, size: 28),
-              SizedBox(width: 15),
-              Text("VOIR LE CALENDRIER DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
+              Icon(Icons.calendar_month, color: Colors.black, size: 24),
+              SizedBox(width: 12),
+              Text("CALENDRIER DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ],
           ),
         ),
       ),
       const SizedBox(height: 20),
 
-      _sectionIntuitive("NUTRITION CIBLÉE", Icons.restaurant_menu, [
-        _infoBouton("Vous avez besoin d'eau: ", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
-        _infoBouton("Ratio Noix", "${(poids * 0.4).toInt()}g"),
+      _sectionIntuitive("NUTRITION CIBLÉE", Icons.water_drop, [
+        _infoBouton("Eau à rajouter :", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)} L"),
+        _infoBouton("Ratio Noix :", "${(poids * 0.4).toInt()} g"),
       ]),
 
-      _sectionIntuitive("ALIMENTATION", Icons.fastfood, [
-        _infoBouton("Plat", "Salade, tomates, œufs cuits, olives"),
-        _infoBouton("Dessert (Vitamines)", "Banane / Orange / Pomme"),
-        _infoBouton("Timing Idéal", timing),
+      _sectionIntuitive("ALIMENTATION PERSO", Icons.restaurant_menu, [
+        _infoTextBloque("Assiette principale", nutrition["plat"]!),
+        _infoTextBloque("Dessert & Vitamines", nutrition["dessert"]!),
+        _infoTextBloque("Collation idéale", nutrition["collation"]!),
+        _infoBouton("Moment idéal :", timing),
       ]),
       
       _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
-        _infoBouton("Repos entre séries", ossature == "Fine" ? "120 secondes" : "90 secondes"),
-        _infoBouton("Exercice Clé", "Farmer Walk"),
+        _infoBouton("Repos requis :", ossature == "Fine" ? "120 secondes" : "90 secondes"),
+        _infoBouton("Exercice clé :", "Farmer Walk"),
       ]),
 
-      _sectionIntuitive("MATÉRIEL MAISON", Icons.home, [
+      _sectionIntuitive("MATÉRIEL MAISON", Icons.gavel, [
         GestureDetector(
           onTap: _launchEquipment,
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5),
             padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.amber, width: 1)),
+            decoration: BoxDecoration(color: Colors.amber.withOpacity(0.05), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.amber.withOpacity(0.3), width: 1)),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Acheter le matériel requis (Maison)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                Icon(Icons.open_in_new, color: Colors.amber, size: 20),
+                Text("Équipement requis à la maison", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                Icon(Icons.open_in_new, color: Colors.amber, size: 18),
               ],
             ),
           ),
         ),
       ]),
       
-      const SizedBox(height: 20),
-      Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30))))
+      const SizedBox(height: 25),
+      Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30, fontSize: 16))))
     ]);
   }
 
-  Widget _sectionIntuitive(String title, IconData icon, List<Widget> children) => ExpansionTile(
-    leading: Icon(icon, color: Colors.amber),
-    title: Text(title, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 18)),
-    backgroundColor: const Color(0xFF1C1C1E),
-    collapsedBackgroundColor: const Color(0xFF1C1C1E),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    childrenPadding: const EdgeInsets.all(15),
-    children: children,
+  Widget _sectionIntuitive(String title, IconData icon, List<Widget> children) => Container(
+    margin: const EdgeInsets.only(bottom: 15),
+    child: ExpansionTile(
+      leading: Icon(icon, color: Colors.amber, size: 22),
+      title: Text(title, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5)),
+      backgroundColor: const Color(0xFF1C1C1E),
+      collapsedBackgroundColor: const Color(0xFF1C1C1E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      childrenPadding: const EdgeInsets.only(left: 15, right: 15, bottom: 15, top: 5),
+      children: children,
+    ),
   );
 
-  Widget _infoBouton(String label, String value) => Container(
-    margin: const EdgeInsets.symmetric(vertical: 5),
-    padding: const EdgeInsets.all(15),
-    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(15)),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Expanded(child: Text(label, style: const TextStyle(color: Colors.white70))),
-      Text(value, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-    ]),
+  Widget _infoBouton(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 15))),
+        Text(value, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 15)),
+      ],
+    ),
+  );
+
+  Widget _infoTextBloque(String title, String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(text, style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.3)),
+      ],
+    ),
   );
 
   Widget _getStepContent() {
@@ -239,19 +305,19 @@ class _VipAppState extends State<VipApp> {
   }
 
   Widget _field(String label, Widget child) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text(label, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)), 
+    Text(label, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)), 
     const SizedBox(height: 25), 
     child
   ]);
 
   Widget _ctrl(int v, Function(int) f) => Row(children: [
-    IconButton(onPressed: () => f(v-1), icon: const Icon(Icons.remove_circle, color: Colors.amber, size: 50)), 
-    Padding(padding: const EdgeInsets.symmetric(horizontal: 25), child: Text("$v", style: const TextStyle(color: Colors.white, fontSize: 60, fontWeight: FontWeight.bold))), 
-    IconButton(onPressed: () => f(v+1), icon: const Icon(Icons.add_circle, color: Colors.amber, size: 50))
+    IconButton(onPressed: () => f(v-1), icon: const Icon(Icons.remove_circle, color: Colors.amber, size: 45)), 
+    Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text("$v", style: const TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold))), 
+    IconButton(onPressed: () => f(v+1), icon: const Icon(Icons.add_circle, color: Colors.amber, size: 45))
   ]);
 
-  Widget _chips(List<String> items, String current, Function(String) f) => Wrap(spacing: 15, children: items.map((e) => ChoiceChip(
-    label: Text(e, style: TextStyle(fontSize: 18, color: current == e ? Colors.black : Colors.white)),
+  Widget _chips(List<String> items, String current, Function(String) f) => Wrap(spacing: 12, runSpacing: 12, children: items.map((e) => ChoiceChip(
+    label: Text(e, style: TextStyle(fontSize: 16, color: current == e ? Colors.black : Colors.white)),
     selected: current == e, onSelected: (_) => f(e), selectedColor: Colors.amber, backgroundColor: const Color(0xFF1C1C1E),
   )).toList());
 }
