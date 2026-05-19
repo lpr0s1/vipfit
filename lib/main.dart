@@ -24,6 +24,11 @@ class _VipAppState extends State<VipApp> {
     if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
+  Future<void> _launchEquipment() async {
+    final Uri url = Uri.parse('https://www.amazon.fr/s?k=materiel+musculation+maison');
+    if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
   void _showHelpDialog() {
     showDialog(
       context: context,
@@ -35,6 +40,74 @@ class _VipAppState extends State<VipApp> {
           const SizedBox(height: 20),
           ElevatedButton(onPressed: _launchTelegram, child: const Text("Telegram")),
         ]),
+      ),
+    );
+  }
+
+  void _showCalendarSheet() {
+    final List<String> jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        padding: const EdgeInsets.all(25),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("PLANNING HEBDOMADAIRE", style: TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: jours.length,
+                itemBuilder: (context, index) {
+                  String jour = jours[index];
+                  return Container(
+                    width: 280,
+                    margin: const EdgeInsets.only(right: 15, bottom: 10),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(jour, style: const TextStyle(color: Colors.amber, fontSize: 24, fontWeight: FontWeight.bold)),
+                          const Divider(color: Colors.white10, height: 25),
+                          const Text("🏋️ SÉANCE", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 5),
+                          Text(jour == "Dimanche" ? "Repos" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 20),
+                          const Text("🍲 PLAT RECOMMANDÉ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 5),
+                          const Text("Salade, tomates, œufs cuits (ou nature), des olives vertes, noires, peu importe", style: TextStyle(color: Colors.white, fontSize: 14)),
+                          const SizedBox(height: 20),
+                          const Text("🍎 DESSERT (VITAMINES)", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 5),
+                          const Text("Fruits (bananes, orange, pommes)", style: TextStyle(color: Colors.white, fontSize: 14)),
+                          const SizedBox(height: 20),
+                          const Text("⏰ TIMING ALIMENTATION", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 5),
+                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -68,43 +141,62 @@ class _VipAppState extends State<VipApp> {
   }
 
   Widget _buildResults() {
-    final List<String> jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
     
     return ListView(padding: const EdgeInsets.all(25), children: [
       const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
       const SizedBox(height: 20),
 
-      // Calendrier Fixe
-      const Text("CALENDRIER D'ENTRAÎNEMENT", style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 10),
-      Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(color: const Color(0xFF1C1C1E), borderRadius: BorderRadius.circular(20)),
-        child: Column(
-          children: jours.map((jour) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(children: [
-              SizedBox(width: 90, child: Text(jour, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-              const Icon(Icons.fitness_center, color: Colors.amber, size: 16),
-              const SizedBox(width: 10),
-              Text(jour == "Dimanche" ? "Repos" : "$focus Intensif", style: TextStyle(color: jour == "Dimanche" ? Colors.white30 : Colors.white70)),
-            ]),
-          )).toList(),
+      // Bouton d'accès au grand calendrier horizontal
+      GestureDetector(
+        onTap: _showCalendarSheet,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(20)),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.calendar_month, color: Colors.black, size: 28),
+              SizedBox(width: 15),
+              Text("VOIR LE CALENDRIER DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
       ),
-
       const SizedBox(height: 20),
-      _sectionIntuitive("NUTRITION", Icons.restaurant_menu, [
-        _infoBouton("Plat", "Salade, tomates, œufs, olives"),
-        _infoBouton("Dessert", "Banane / Orange / Pomme"),
-        _infoBouton("Timing", timing),
-        _infoBouton("Besoin d'eau", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
+
+      _sectionIntuitive("NUTRITION CIBLÉE", Icons.restaurant_menu, [
+        _infoBouton("Vous avez besoin d'eau: ", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
+        _infoBouton("Ratio Noix", "${(poids * 0.4).toInt()}g"),
+      ]),
+
+      _sectionIntuitive("ALIMENTATION", Icons.fastfood, [
+        _infoBouton("Plat", "Salade, tomates, œufs cuits, olives"),
+        _infoBouton("Dessert (Vitamines)", "Banane / Orange / Pomme"),
+        _infoBouton("Timing Idéal", timing),
       ]),
       
       _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
         _infoBouton("Repos entre séries", ossature == "Fine" ? "120 secondes" : "90 secondes"),
         _infoBouton("Exercice Clé", "Farmer Walk"),
+      ]),
+
+      _sectionIntuitive("MATÉRIEL MAISON", Icons.home, [
+        GestureDetector(
+          onTap: _launchEquipment,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.amber, width: 1)),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Acheter le matériel requis (Maison)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                Icon(Icons.open_in_new, color: Colors.amber, size: 20),
+              ],
+            ),
+          ),
+        ),
       ]),
       
       const SizedBox(height: 20),
@@ -127,7 +219,7 @@ class _VipAppState extends State<VipApp> {
     padding: const EdgeInsets.all(15),
     decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(15)),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(label, style: const TextStyle(color: Colors.white70)),
+      Expanded(child: Text(label, style: const TextStyle(color: Colors.white70))),
       Text(value, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
     ]),
   );
