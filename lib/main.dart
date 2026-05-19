@@ -98,7 +98,7 @@ class _VipAppState extends State<VipApp> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("ALIMENTATION DE LA SEMAINE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text("ALIMENTATION SEMAINE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
                 IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
               ],
             ),
@@ -129,7 +129,7 @@ class _VipAppState extends State<VipApp> {
                             const Text("SÉANCE DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(jour == "Dimanche" ? "Repos complet" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(jour == "Dimanche" ? "Repos complet" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                           
                           const SizedBox(height: 20),
                           Row(children: [
@@ -138,7 +138,7 @@ class _VipAppState extends State<VipApp> {
                             const Text("PLAT PRINCIPAL", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutritionJour["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 7, height: 1.4)),
+                          Text(nutritionJour["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.4)),
                           
                           const SizedBox(height: 20),
                           Row(children: [
@@ -147,7 +147,7 @@ class _VipAppState extends State<VipApp> {
                             const Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutritionJour["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 7, height: 1.4)),
+                          Text(nutritionJour["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.4)),
                           
                           const SizedBox(height: 20),
                           Row(children: [
@@ -156,7 +156,7 @@ class _VipAppState extends State<VipApp> {
                             const Text("COLLATION DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutritionJour["collation"]!, style: const TextStyle(color: Colors.white70, fontSize: 7, height: 1.4)),
+                          Text(nutritionJour["collation"]!, style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.4)),
 
                           const SizedBox(height: 20),
                           Row(children: [
@@ -165,7 +165,7 @@ class _VipAppState extends State<VipApp> {
                             const Text("TIMING REPAS", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 7)),
+                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 10)),
                         ],
                       ),
                     ),
@@ -201,7 +201,7 @@ class _VipAppState extends State<VipApp> {
       SizedBox(width: double.infinity, height: 60, child: ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
         onPressed: () => setState(() => etape < 7 ? etape++ : showResults = true),
-        child: Text(etape == 7 ? "GÉNÉRER MON PLAN" : "CONTINUER", style: const TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold)),
+        child: Text(etape == 7 ? "VOIR MON PLAN" : "CONTINUER", style: const TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold)),
       )),
       const SizedBox(height: 30)
     ]));
@@ -225,7 +225,7 @@ class _VipAppState extends State<VipApp> {
             children: [
               Icon(Icons.calendar_month, color: Colors.black, size: 24),
               const SizedBox(width: 12),
-              const Text("CALENDRIER DES REPAS DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              const Text("CALENDRIER DES REPAS", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ],
           ),
         ),
@@ -291,7 +291,7 @@ class _VipAppState extends State<VipApp> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 15))),
-        Text(value, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 15)),
+        Text(value, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12)),
       ],
     ),
   );
