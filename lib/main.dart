@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart'; // Import ajouté
 
 void main() => runApp(const MaterialApp(
   home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipApp())),
@@ -18,9 +19,13 @@ class _VipAppState extends State<VipApp> {
   String sexe = "Homme", ossature = "Fine", focus = "Bras";
   int age = 20, poids = 75, taille = 180, reveil = 8, eauActuelle = 2;
 
-  String get feedbackMorpho => (poids < 65) 
-      ? "Profil Ectomorphe : Priorité à la suralimentation et aux charges lourdes." 
-      : "Profil Endomorphe : Priorité à la densité et à l'hydratation constante.";
+  // Fonction pour ouvrir Telegram
+  Future<void> _launchTelegram() async {
+    final Uri url = Uri.parse('https://t.me/vxshare5/249');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +55,9 @@ class _VipAppState extends State<VipApp> {
 
   Widget _getStepContent() {
     final steps = [
-      _field("Ton Sexe", _chips(["Homme", "Femme", "Arbre"], sexe, (v) => setState(() => sexe = v))),
+      _field("Ton Sexe", _chips(["Homme", "Femme"], sexe, (v) => setState(() => sexe = v))),
       _field("Ton Âge", _ctrl(age, (v) => setState(() => age = v))),
-      _field("Ton Poids (${poids < 65 ? 'Léger' : 'Lourd'})", _ctrl(poids, (v) => setState(() => poids = v))),
+      _field("Ton Poids", _ctrl(poids, (v) => setState(() => poids = v))),
       _field("Ta Taille", _ctrl(taille, (v) => setState(() => taille = v))),
       _field("Heure de réveil", _ctrl(reveil, (v) => setState(() => reveil = v))),
       _field("Eau consommée (L)", _ctrl(eauActuelle, (v) => setState(() => eauActuelle = v))),
@@ -64,17 +69,33 @@ class _VipAppState extends State<VipApp> {
 
   Widget _buildResults() => ListView(padding: const EdgeInsets.all(25), children: [
     _section("ANALYSE MORPHOLOGIQUE", [
-      _actionTile(Icons.psychology, "Verdict", feedbackMorpho),
-      _actionTile(Icons.local_drink, "Hydratation Cible", "Boire ${(poids * 0.035).toStringAsFixed(1)}L/jour. Tu en manques ${((poids*0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L."),
+      _actionTile(Icons.psychology, "Verdict", "Profil optimisé pour ton type."),
+      _actionTile(Icons.local_drink, "Hydratation", "Besoin de ${(poids * 0.035).toStringAsFixed(1)}L/jour."),
     ]),
     _section("PROTOCOLE $focus", [
-      _actionTile(Icons.fitness_center, "Volume d'entraînement", "4 séries de 12 pour choquer la fibre."),
-      _actionTile(Icons.bolt, "Conseil Intensité", ossature == "Fine" ? "Repos 120s pour protéger les tendons." : "Repos 90s pour densifier le muscle."),
+      _actionTile(Icons.fitness_center, "Programme", "4 séries de 12 reps."),
+      _actionTile(Icons.bolt, "Intensité", ossature == "Fine" ? "Repos long pour les tendons." : "Repos court pour la densité."),
     ]),
+    
+    // NOUVEAU BOUTON TELEGRAM
+    const SizedBox(height: 10),
+    ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blueAccent,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(double.infinity, 55),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      onPressed: _launchTelegram,
+      icon: const Icon(Icons.send),
+      label: const Text("REJOINDRE LA COMMUNAUTÉ TELEGRAM", style: TextStyle(fontWeight: FontWeight.bold)),
+    ),
+    
     const SizedBox(height: 20),
     Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30))))
   ]);
 
+  // --- DESIGN SYSTÈME ---
   Widget _section(String title, List<Widget> children) => Container(
     margin: const EdgeInsets.only(bottom: 25),
     padding: const EdgeInsets.all(25),
