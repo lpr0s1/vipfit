@@ -27,12 +27,11 @@ class _VipAppState extends State<VipApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(backgroundColor: Colors.black, body: Column(children: [
-      // --- HEADER AVEC MENU HELP ---
       Padding(padding: const EdgeInsets.all(25), child: Row(children: [
         if (etape > 0 && !showResults) IconButton(onPressed: () => setState(() => etape--), icon: const Icon(Icons.arrow_back_ios, color: Colors.white)),
         ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset('assets/app_icon.png', width: 40, height: 40)),
         const SizedBox(width: 15),
-        const Text("VIP FIT ELITE", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+        const Text("VIP FIT", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
         const Spacer(),
         PopupMenuButton<String>(
           icon: const Icon(Icons.help_outline, color: Colors.amber, size: 30),
@@ -52,17 +51,17 @@ class _VipAppState extends State<VipApp> {
       SizedBox(width: double.infinity, height: 60, child: ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
         onPressed: () => setState(() => etape < 7 ? etape++ : showResults = true),
-        child: Text(etape == 7 ? "GÉNÉRER MON PROTOCOLE" : "CONTINUER", style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+        child: Text(etape == 7 ? "GÉNÉRER MON PLAN" : "CONTINUER", style: const TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold)),
       )),
       const SizedBox(height: 30)
     ]));
   }
 
   Widget _buildResults() => ListView(padding: const EdgeInsets.all(25), children: [
-    const Text("TON PROTOCOLE", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+    const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
     const SizedBox(height: 20),
     _sectionIntuitive("NUTRITION CIBLÉE", Icons.restaurant_menu, [
-      _infoBouton("Besoin Hydrique", "Ajouter ${( (poids*0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
+      _infoBouton("Vous avez besoin d'eau: ", "${( (poids*0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)}L"),
       _infoBouton("Ratio Noix", "${(poids * 0.4).toInt()}g"),
     ]),
     _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
@@ -73,7 +72,6 @@ class _VipAppState extends State<VipApp> {
     Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30))))
   ]);
 
-  // --- DESIGN INTUITIF ---
   Widget _sectionIntuitive(String title, IconData icon, List<Widget> children) => ExpansionTile(
     leading: Icon(icon, color: Colors.amber),
     title: Text(title, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 18)),
