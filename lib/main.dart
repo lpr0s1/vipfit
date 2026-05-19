@@ -36,7 +36,7 @@ class _VipAppState extends State<VipApp> {
       backgroundColor: const Color(0xFF1C1C1E),
       title: const Text("Help", style: TextStyle(color: Colors.white)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Text("Version: 0.0.1", style: TextStyle(color: Colors.white54)),
+        const Text("Version: 0.0.1\n[ Petit rappel: Les données ne sont jamais enregistrer, donc quand vous quittez l'appli, elles sont effacer. ]", style: TextStyle(color: Colors.white54)),
         const SizedBox(height: 20),
         ElevatedButton(
           onPressed: _launchTelegram, 
@@ -319,14 +319,14 @@ class _VipAppState extends State<VipApp> {
 
   Widget _getStepContent() {
     final steps = [
-      _field("Ton Sexe", _chips(["Homme", "Femme"], sexe, (v) => setState(() => sexe = v))),
-      _field("Ton Âge", _ctrl(age, (v) => setState(() => age = v))),
-      _field("Ton Poids", _ctrl(poids, (v) => setState(() => poids = v))),
-      _field("Ta Taille", _ctrl(taille, (v) => setState(() => taille = v))),
-      _field("Réveil", _ctrl(reveil, (v) => setState(() => reveil = v))),
-      _field("Combien de litre d'eau vous buvez par jour (environ) ?", _ctrl(eauActuelle, (v) => setState(() => eauActuelle = v))),
-      _field("Structure", _chips(["Fine", "Normale"], ossature, (v) => setState(() => ossature = v))),
-      _field("Objectif", _chips(["Bras", "Jambes", "Dos"], focus, (v) => setState(() => focus = v))),
+      _field("Ton sexe ?", _chips(["Homme", "Femme"], sexe, (v) => setState(() => sexe = v))),
+      _field("Quel est ton age ?", _ctrl(age, (v) => setState(() => age = v))),
+      _field("Combien tu pèse ?", _ctrl(poids, (v) => setState(() => poids = v))),
+      _field("Quel Taille tu fait ?", _ctrl(taille, (v) => setState(() => taille = v))),
+      _field("Tu dort combien d'heures ?", _ctrl(reveil, (v) => setState(() => reveil = v))),
+      _field("Combien de litre d'eau tu bois par jour (environ) ?", _ctrl(eauActuelle, (v) => setState(() => eauActuelle = v))),
+      _field("Tu as des os plutôt fins ou épais ?", _chips(["Fine", "Normale"], ossature, (v) => setState(() => ossature = v))),
+      _field("Quel est ton objectif ?", _chips(["Bras", "Jambes", "Dos"], focus, (v) => setState(() => focus = v))),
     ];
     return steps[etape];
   }
