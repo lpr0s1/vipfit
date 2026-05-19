@@ -44,36 +44,48 @@ class _VipAppState extends State<VipApp> {
     );
   }
 
-  // --- GÉNÉRATEUR REPAS INTELLIGENT ET PERSONNALISÉ ---
-  Map<String, String> _genererNutritionProfil() {
-    if (poids < 65) {
-      // Profil ectomorphe / Prise de masse
+  // --- GÉNÉRATEUR DE REPAS VARIÉS ET ADAPTÉS AU PROFIL ---
+  Map<String, String> _getRepasPourJour(String jour) {
+    bool isPriseDeMasse = poids < 78; // Ajustement automatique des portions/calories
+
+    // Roulement des menus sur la semaine pour éviter la monotonie
+    if (jour == "Lundi" || jour == "Jeudi") {
       return {
-        "plat": "Riz basmati, pavé de saumon, avocat entier, œufs mollets et huile d'olive.",
-        "dessert": "Banane mûre avec une poignée de noix de cajou (haute densité calorique).",
-        "collation": "Shaker d'avoine instantané, miel et 3 œufs nature 1h avant l'effort."
+        "plat": isPriseDeMasse 
+            ? "Pâtes complètes, steak haché 5%, sauce tomate maison, olives noires et parmesan."
+            : "Pavé de saumon, quinoa, brocolis vapeur, filet d'huile d'olive et citrons.",
+        "dessert": "Banane et une poignée d'amandes (Riche en potassium et magnésium).",
+        "collation": "3 œufs au plat avec une tranche de pain de seigle."
       };
-    } else if (poids > 85) {
-      // Profil lourd / Sèche ou Recomposition
+    } else if (jour == "Mardi" || jour == "Vendredi") {
       return {
-        "plat": "Blanc de poulet grillé, brocolis vapeur, salade de tomates, olives noires et blancs d'œufs.",
-        "dessert": "Pomme verte ou demi-pamplemousse (excellent coupe-faim riche en vitamines).",
-        "collation": "Amandes et thé vert sans sucre 45min avant l'effort."
+        "plat": isPriseDeMasse 
+            ? "Riz basmati, émincé de poulet, crème de coco, curry et avocat entier."
+            : "Blanc de dinde, patate douce au four, asperges et filet d'huile de colza.",
+        "dessert": "Une grosse orange (Idéal pour faire le plein de Vitamine C).",
+        "collation": "Bol de fromage blanc 3% avec du miel et des graines de chia."
+      };
+    } else if (jour == "Mercredi" || jour == "Samedi") {
+      return {
+        "plat": isPriseDeMasse
+            ? "Wrap complet au thon, œufs durs écrasés, tomates, maïs et filet d'huile d'olive."
+            : "Salade de lentilles vertes, pavé de cabillaud, tomates cerises et olives vertes.",
+        "dessert": "Pomme coupée en morceaux avec un carré de chocolat noir 85%.",
+        "collation": "Smoothie maison : Lait d'amande, beurre de cacahuète et flocons d'avoine."
       };
     } else {
-      // Profil intermédiaire / Athlétique
+      // Dimanche (Jour de repos)
       return {
-        "plat": "Patate douce au four, steak de bœuf 5%, salade verte, œufs au plat et quelques olives vertes.",
-        "dessert": "Orange ou bol de baies/fraises (riches en antioxydants).",
-        "collation": "Une pomme et 20g de chocolat noir 85% avant le sport."
+        "plat": "Riz cantonais revisité (Riz, petits pois, dés de jambon, œufs brouillés), salade verte.",
+        "dessert": "Un bol de fraises ou de baies rouges (Antioxydants puissants).",
+        "collation": "Une poignée de noix de Grenoble et un thé vert."
       };
     }
   }
 
   void _showCalendarSheet() {
     final List<String> jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-    String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
-    Map<String, String> nutrition = _genererNutritionProfil();
+    String timing = poids > 80 ? "Après le sport (Fenêtre Anabolique)" : "Avant le sport (Glucides complexes)";
 
     showModalBottomSheet(
       context: context,
@@ -89,7 +101,7 @@ class _VipAppState extends State<VipApp> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("PLANNING HEBDOMADAIRE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text("VARIATIONS DE LA SEMAINE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
                 IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
               ],
             ),
@@ -100,6 +112,8 @@ class _VipAppState extends State<VipApp> {
                 itemCount: jours.length,
                 itemBuilder: (context, index) {
                   String jour = jours[index];
+                  Map<String, String> nutritionJour = _getRepasPourJour(jour);
+                  
                   return Container(
                     width: 300,
                     margin: const EdgeInsets.only(right: 15, bottom: 10),
@@ -115,19 +129,19 @@ class _VipAppState extends State<VipApp> {
                           const Row(children: [
                             Icon(Icons.fitness_center, color: Colors.white54, size: 16),
                             SizedBox(width: 8),
-                            Text("SÉANCE", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text("SÉANCE DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(jour == "Dimanche" ? "Repos complet" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(jour == "Dimanche" ? "Repos complet (Récupération)" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                           
                           const SizedBox(height: 20),
                           const Row(children: [
                             Icon(Icons.restaurant, color: Colors.white54, size: 16),
                             SizedBox(width: 8),
-                            Text("PLAT DU PROFIL", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text("PLAT PRINCIPAL", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutrition["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          Text(nutritionJour["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
                           
                           const SizedBox(height: 20),
                           const Row(children: [
@@ -136,8 +150,15 @@ class _VipAppState extends State<VipApp> {
                             Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                           ]),
                           const SizedBox(height: 6),
-                          Text(nutrition["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+                          Text(nutritionJour["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
                           
+                          const SizedBox(height: 20),
+                          const Row(children: [Icons.cookie, color: Colors.white54, size: 16],),
+                          const SizedBox(width: 8),
+                          const Text("COLLATION DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(nutritionJour["collation"]!, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4)),
+
                           const SizedBox(height: 20),
                           const Row(children: [
                             Icon(Icons.access_time, color: Colors.white54, size: 16),
@@ -189,13 +210,12 @@ class _VipAppState extends State<VipApp> {
 
   Widget _buildResults() {
     String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
-    Map<String, String> nutrition = _genererNutritionProfil();
+    Map<String, String> nutritionAujourdhui = _getRepasPourJour("Lundi"); // Base exemple pour l'accueil
     
     return ListView(padding: const EdgeInsets.all(25), children: [
       const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
       const SizedBox(height: 25),
 
-      // Bouton Calendrier épuré
       GestureDetector(
         onTap: _showCalendarSheet,
         child: Container(
@@ -206,7 +226,7 @@ class _VipAppState extends State<VipApp> {
             children: [
               Icon(Icons.calendar_month, color: Colors.black, size: 24),
               SizedBox(width: 12),
-              Text("CALENDRIER DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              Text("CALENDRIER DES REPAS DE LA SEMAINE", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ],
           ),
         ),
@@ -218,11 +238,10 @@ class _VipAppState extends State<VipApp> {
         _infoBouton("Ratio Noix :", "${(poids * 0.4).toInt()} g"),
       ]),
 
-      _sectionIntuitive("ALIMENTATION PERSO", Icons.restaurant_menu, [
-        _infoTextBloque("Assiette principale", nutrition["plat"]!),
-        _infoTextBloque("Dessert & Vitamines", nutrition["dessert"]!),
-        _infoTextBloque("Collation idéale", nutrition["collation"]!),
-        _infoBouton("Moment idéal :", timing),
+      _sectionIntuitive("EXEMPLE DE REPAS", Icons.restaurant_menu, [
+        _infoTextBloque("Plat type sain & complet", nutritionAujourdhui["plat"]!),
+        _infoTextBloque("Fruits & Énergie (Dessert)", nutritionAujourdhui["dessert"]!),
+        _infoBouton("Timing idéal :", timing),
       ]),
       
       _sectionIntuitive("PROTOCOLE SPORTIF ($focus)", Icons.fitness_center, [
