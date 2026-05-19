@@ -38,7 +38,7 @@ class _VipAppState extends State<VipApp> {
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text("Version: 0.0.1", style: TextStyle(color: Colors.white54)),
           const SizedBox(height: 20),
-          ElevatedButton(onPressed: _launchTelegram, child: const Text("Rejoindre le groupe"), style: TextStyle(color: Colors(0xFF24A1DE)),
+          ElevatedButton(onPressed: _launchTelegram, child: const Text("Rejoindre le groupe", style: TextStyle(color: Color(0xFF24A1DE)))),
         ]),
       ),
     );
