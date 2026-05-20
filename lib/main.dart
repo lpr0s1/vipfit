@@ -283,10 +283,12 @@ class _VipAppState extends State<VipApp> {
   Widget _sectionIntuitive(String title, IconData icon, List<Widget> children) => Container(
     margin: const EdgeInsets.only(bottom: 15),
     child: ExpansionTile(
-      leading: Icon(icon, color: Colors.amber, size: 22),
-      title: Text(title, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5)),
+      leading: Icon(icon, color: Colors.white, size: 22),
+      title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5)),
       backgroundColor: const Color(0xFF1C1C1E),
       collapsedBackgroundColor: const Color(0xFF1C1C1E),
+      iconColor: Colors.white,
+      collapsedIconColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       childrenPadding: const EdgeInsets.only(left: 15, right: 15, bottom: 15, top: 5),
