@@ -24,7 +24,7 @@ workflows:
             dart run flutter_launcher_icons || true
           fi
           
-      - name: 4. AL : xcode
+      - name: 4. ALxcode
         script: |
           echo "-> Injection du script dans le Podfile..."
           
