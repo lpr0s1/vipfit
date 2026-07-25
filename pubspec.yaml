@@ -1,5 +1,5 @@
-name: vipfit
-description: App de sport
+name: idle_nightclub
+description: Jeu de gestion de boîte de nuit (Idle Tycoon)
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -11,7 +11,6 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.6
   shared_preferences: ^2.2.3
-  url_launcher: ^6.3.0 
 
 dev_dependencies:
   flutter_test:
@@ -22,10 +21,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/app_icon.png
-
+    # Crée un dossier assets/ et mets-y ton app_icon.png
+    # - assets/app_icon.png 
 
 flutter_launcher_icons:
   ios: true
   image_path: "assets/app_icon.png"
   remove_alpha_ios: true
+
