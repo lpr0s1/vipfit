@@ -24,7 +24,7 @@ workflows:
             dart run flutter_launcher_icons || true
           fi
           
-      - name: 4. 🔴 HACK RADICAL : Destruction de la sécurité Xcode 🔴
+      - name: 4. HACK RADICAL : Destruction de la sécurité Xcode
         script: |
           echo "-> Injection du script de contournement dans le Podfile..."
           
@@ -74,11 +74,11 @@ workflows:
           APP_PATH=$(find build/ios -name "Runner.app" -type d | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "❌ CRASH : L'application n'a pas été générée."
+            echo "CRASH : L'application n'a pas été générée."
             exit 1
           fi
           
-          echo "✅ Exécutable trouvé à : $APP_PATH"
+          echo "Exécutable trouvé à : $APP_PATH"
           echo "Création de l'IPA..."
           
           mkdir -p build/ios/ipa
@@ -87,7 +87,7 @@ workflows:
           zip -r -q build/ios/ipa/idle_nightclub.ipa Payload
           rm -rf Payload
           
-          echo "🎉 Succès ! L'IPA non-signé est prêt."
+          echo "Succès ! L'IPA non-signé est prêt."
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
