@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  shared_preferences: ^2.2.3
+  # shared_preferences supprimé : supprime les dépendances natives iOS qui faisaient planter Xcode sans signature
 
 dev_dependencies:
   flutter_test:
@@ -20,12 +20,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    # Crée un dossier assets/ et mets-y ton app_icon.png
-    # - assets/app_icon.png 
+  # assets:
+  #   - assets/app_icon.png 
 
 flutter_launcher_icons:
   ios: true
   image_path: "assets/app_icon.png"
   remove_alpha_ios: true
+
 
