@@ -7,67 +7,93 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
-      - name: 1. Initialiser l'arborescence iOS
+      - name: 1. Nettoyage et Réparation du projet
         script: |
-          echo "Génération des dossiers natifs iOS..."
-          if [ ! -d "ios" ]; then
-            flutter create . --project-name idle_nightclub --org com.studio.nightclub --platforms ios
-          else
-            echo "Dossier iOS déjà présent."
-          fi
+          echo "Nettoyage du cache Flutter..."
+          flutter clean
+          echo "Réparation/Création de l'arborescence iOS..."
+          flutter create . --project-name idle_nightclub --org com.studio.nightclub --platforms ios
           
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
           
-      - name: 3. Générer automatiquement l'icône de l'application
+      - name: 3. Génération de l'icône
         script: |
           if [ -f "assets/app_icon.png" ]; then
-            dart run flutter_launcher_icons
+            dart run flutter_launcher_icons || true
           fi
           
-      - name: 4. Compiler la version iOS (Sans signature)
+      - name: 4. 🔴 HACK RADICAL : Destruction de la sécurité Xcode 🔴
         script: |
-          echo "Compilation en cours... (Mode sans signature Apple)"
-          # Ces variables forcent Xcode à désactiver complètement toute tentative de signature
+          echo "-> Injection du script de contournement dans le Podfile..."
+          
+          # 1. Suppression de l'ancien système de build Flutter dans le Podfile
+          sed -i '' '/post_install do |installer|/,/^end/d' ios/Podfile
+          
+          # 2. Injection du code qui force Xcode à ignorer TOUTES les signatures (même pour les dépendances)
+          cat << 'EOF' >> ios/Podfile
+          post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              flutter_additional_ios_build_settings(target)
+              target.build_configurations.each do |config|
+                config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+                config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+                config.build_settings['CODE_SIGN_IDENTITY'] = '-'
+                config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = '-'
+                config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ''
+              end
+            end
+          end
+          EOF
+          
+          echo "-> Désactivation dans le projet principal (Runner)..."
+          sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' ios/Runner.xcodeproj/project.pbxproj
+          sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' ios/Runner.xcodeproj/project.pbxproj
+          
+          echo "-> Purge du cache iOS et installation propre des Pods..."
+          cd ios
+          rm -rf Pods Podfile.lock
+          pod install --repo-update
+          cd ..
+          
+      - name: 5. Compilation iOS (Force brute)
+        script: |
+          echo "Lancement de la compilation..."
+          # Injection des variables d'environnement globales anti-signature
           export CODE_SIGNING_ALLOWED="NO"
           export CODE_SIGNING_REQUIRED="NO"
-          export CODE_SIGN_IDENTITY=""
+          export CODE_SIGN_IDENTITY="-"
           
           flutter build ios --release --no-codesign
           
-      - name: 5. Créer le fichier .ipa
+      - name: 6. Empaquetage du fichier .ipa final
         script: |
-          echo "Recherche du fichier Runner.app..."
-          # Cherche dynamiquement le dossier généré par Flutter (évite les erreurs de chemin introuvable)
+          echo "Recherche du fichier exécutable (.app)..."
+          # Recherche dynamique pour éviter les erreurs de chemins introuvables
           APP_PATH=$(find build/ios -name "Runner.app" -type d | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "Erreur : Runner.app introuvable. La compilation a probablement échoué."
+            echo "❌ CRASH : L'application n'a pas été générée."
             exit 1
           fi
           
-          echo "Runner.app trouvé à l'emplacement : $APP_PATH"
+          echo "✅ Exécutable trouvé à : $APP_PATH"
+          echo "Création de l'IPA..."
           
-          # Préparation des dossiers
           mkdir -p build/ios/ipa
           mkdir -p Payload
-          
-          # Copie et compression
-          echo "Empaquetage du Payload..."
           cp -R "$APP_PATH" Payload/
           zip -r -q build/ios/ipa/idle_nightclub.ipa Payload
-          
-          # Nettoyage
           rm -rf Payload
-          echo "Fichier IPA généré avec succès !"
           
+          echo "🎉 Succès ! L'IPA non-signé est prêt."
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - blackberko400@gmail.com # Remplace par ton email
+          - test@example.com # N'oublie pas de remettre ton adresse mail ici
         notify:
           success: true
           failure: true
