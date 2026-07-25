@@ -7,51 +7,60 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
-      - name: 1. Initialiser l'arborescence iOS
+      - name: 1. Nettoyage radical et Génération iOS
         script: |
-          echo "Génération des dossiers natifs iOS..."
-          if [ ! -d "ios" ]; then
-            flutter create . --project-name idle_nightclub --org com.studio.nightclub --platforms ios
-          else
-            echo "Dossier iOS déjà présent."
-          fi
+          echo "Suppression du dossier ios (pour éviter les anciens conflits de signature)..."
+          rm -rf ios
+          echo "Création d'un environnement iOS 100% neuf..."
+          flutter create . --platforms ios
           
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
           
-      - name: 3. Générer automatiquement l'icône de l'application
+      - name: 3. Générer l'icône de l'application
         script: |
           if [ -f "assets/app_icon.png" ]; then
-            dart run flutter_launcher_icons
+            dart run flutter_launcher_icons || true
           fi
           
       - name: 4. Compiler la version iOS (Sans signature)
         script: |
-          echo "Compilation en cours... (Mode sans signature Apple)"
+          echo "Compilation en cours..."
+          # L'application est maintenant 100% Flutter pur, Xcode ne plantera plus sur les Pods
           flutter build ios --release --no-codesign
           
-      - name: 5. Créer le fichier .ipa
+      - name: 5. Empaquetage pour Sideloadly (.ipa)
         script: |
-          echo "Empaquetage du Payload..."
-          mkdir -p build/ios/ipa
-          # Selon la version de Flutter, le dossier peut s'appeler Release-iphoneos ou iphoneos
-          # On teste le premier, sinon on va dans le deuxième
-          if [ -d "build/ios/iphoneos" ]; then
-            cd build/ios/iphoneos
-          else
-            cd build/ios/Release-iphoneos
+          echo "Recherche de l'application générée..."
+          APP_PATH=$(find build/ios -name "Runner.app" -type d | head -n 1)
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ CRASH : L'application n'a pas été trouvée. Vérifie les logs de l'étape 4."
+            exit 1
           fi
+          
+          echo "✅ Application trouvée : $APP_PATH"
+          mkdir -p build/ios/ipa
           mkdir -p Payload
-          mv Runner.app Payload/
-          zip -r -q ../ipa/idle_nightclub.ipa Payload
+          
+          # Copie de l'application
+          cp -R "$APP_PATH" Payload/
+          
+          # Astuce de pro : on nettoie les attributs étendus Mac qui bloquent parfois Sideloadly
+          xattr -cr Payload/Runner.app || true
+          
+          # Création du fichier IPA final
+          zip -r -q build/ios/ipa/idle_nightclub.ipa Payload
+          rm -rf Payload
+          echo "🎉 Fichier IPA prêt pour Sideloadly !"
           
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - test@example.com # Remplace par ton email
+          - test@example.com # Pense à mettre ton mail
         notify:
           success: true
           failure: true
