@@ -1,352 +1,632 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-void main() => runApp(const MaterialApp(
-  home: Scaffold(backgroundColor: Colors.black, body: SafeArea(child: VipApp())),
-  debugShowCheckedModeBanner: false,
-));
+void main() {
+  runApp(const IdleNightclubApp());
+}
 
-class VipApp extends StatefulWidget {
-  const VipApp({super.key});
+class IdleNightclubApp extends StatelessWidget {
+  const IdleNightclubApp({super.key});
+
   @override
-  State<VipApp> createState() => _VipAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Idle Nightclub',
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: Colors.deepPurple,
+        scaffoldBackgroundColor: Colors.black,
+      ),
+      home: const GameScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
 }
 
-class _VipAppState extends State<VipApp> {
-  int etape = 0;
-  bool showResults = false;
+// --- MODÈLES DE DONNÉES ---
+
+enum ClientState { walkingToClub, atBar, dancing, walkingOut }
+
+class Client {
+  Offset position;
+  ClientState state;
+  Offset target;
+  Color color;
+  double waitTime;
+
+  Client({required this.position, required this.color})
+      : state = ClientState.walkingToClub,
+        target = Offset.zero,
+        waitTime = 0;
+}
+
+class Car {
+  String name;
+  Color color;
+  double price;
+  IconData icon;
+  Offset parkingSpot;
+
+  Car(this.name, this.color, this.price, this.icon, this.parkingSpot);
+}
+
+// --- ÉCRAN PRINCIPAL DU JEU ---
+
+class GameScreen extends StatefulWidget {
+  const GameScreen({super.key});
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateMixin {
+  // Moteur de jeu
+  late AnimationController _gameLoopController;
+  final Random _random = Random();
+  DateTime _lastUpdate = DateTime.now();
   
-  String sexe = "Homme", ossature = "Fine", focus = "Bras";
-  int age = 20, poids = 75, taille = 180, reveil = 8, eauActuelle = 2;
+  // Caméra et Mouvements
+  Offset _playerPosition = const Offset(100, 100);
+  Offset _joystickDelta = Offset.zero;
+  final double _playerSpeed = 200.0; // pixels par seconde
 
-  Future<void> _launchTelegram() async {
-    final Uri url = Uri.parse('https://t.me/vxshare5/249');
-    if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+  // Économie et Gestion
+  double _money = 500.0;
+  int _drinksStock = 20;
+  
+  // Améliorations
+  int _clubCapacity = 5;
+  int _barLevel = 1;
+  int _dancefloorLevel = 1;
+  bool _hasVIP = false;
+  
+  // Personnalisation Joueur
+  Color _playerShirtColor = Colors.white;
+  Color _playerPantsColor = Colors.blue;
+
+  // Entités du monde
+  List<Client> _clients = [];
+  List<Car> _ownedCars = [];
+  
+  // Constantes de la map
+  final Rect _clubBounds = const Rect.fromLTWH(0, 0, 800, 600);
+  final Rect _parkingBounds = const Rect.fromLTWH(-400, 0, 400, 600);
+  final Rect _barBounds = const Rect.fromLTWH(600, 50, 150, 150);
+  final Rect _dancefloorBounds = const Rect.fromLTWH(200, 200, 300, 300);
+  final Rect _doorPosition = const Rect.fromLTWH(-20, 250, 40, 100);
+
+  // Catalogue de véhicules
+  final List<Car> _carCatalog = [
+    Car("Berline de Luxe", Colors.grey, 2000, Icons.directions_car, const Offset(-100, 100)),
+    Car("Voiture de Sport", Colors.red, 5000, Icons.sports_motorsports, const Offset(-100, 250)),
+    Car("Limousine", Colors.white, 15000, Icons.airport_shuttle, const Offset(-100, 400)),
+    Car("Supercar", Colors.yellowAccent, 50000, Icons.electric_car, const Offset(-250, 250)),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Boucle de jeu (environ 60 FPS)
+    _gameLoopController = AnimationController(vsync: this, duration: const Duration(days: 999));
+    _gameLoopController.addListener(_updateGame);
+    _gameLoopController.forward();
+    
+    // Timer d'apparition des clients
+    Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (_clients.length < _clubCapacity) {
+        _spawnClient();
+      }
+    });
   }
 
-  Future<void> _launchEquipment() async {
-    final Uri url = Uri.parse('https://www.amazon.fr/s?k=materiel+musculation+maison');
-    if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+  @override
+  void dispose() {
+    _gameLoopController.dispose();
+    super.dispose();
   }
 
-  void _showHelpDialog() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: const Color(0xFF1C1C1E),
-      title: const Text("Help", style: TextStyle(color: Colors.white)),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Text("Version: 0.0.1\n\n[ Petit rappel: Les données ne sont jamais enregistrer, donc quand vous quittez l'appli, elles sont effacer. ]", style: TextStyle(color: Colors.white54)),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: _launchTelegram, 
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF24A1DE),
-          ),
-          child: const Text(
-            "Rejoindre le groupe", 
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      ]),
-    ),
-  );
-}
+  void _updateGame() {
+    final now = DateTime.now();
+    final double dt = now.difference(_lastUpdate).inMilliseconds / 1000.0;
+    _lastUpdate = now;
 
-  Map<String, String> _getRepasPourJour(String jour) {
-    bool isPriseDeMasse = poids < 78;
+    setState(() {
+      // 1. Déplacement du joueur
+      if (_joystickDelta != Offset.zero) {
+        _playerPosition += _joystickDelta * _playerSpeed * dt;
+        // Collisions basiques (garder le joueur dans la map)
+        _playerPosition = Offset(
+          _playerPosition.dx.clamp(_parkingBounds.left, _clubBounds.right),
+          _playerPosition.dy.clamp(0.0, _clubBounds.bottom),
+        );
+      }
 
-    if (jour == "Lundi" || jour == "Jeudi") {
-      return {
-        "plat": isPriseDeMasse 
-            ? "Pâtes complètes, steak haché 5%, sauce tomate maison, olives noires et parmesan."
-            : "Pavé de saumon, quinoa, brocolis vapeur, filet d'huile d'olive et citrons.",
-        "dessert": "Banane et une poignée d'amandes (Riche en potassium et magnésium).",
-        "collation": "3 œufs au plat avec une tranche de pain de seigle."
-      };
-    } else if (jour == "Mardi" || jour == "Vendredi") {
-      return {
-        "plat": isPriseDeMasse 
-            ? "Riz basmati, émincé de poulet, crème de coco, curry et avocat entier."
-            : "Blanc de dinde, patate douce au four, asperges et filet d'huile de colza.",
-        "dessert": "Une grosse orange (Idéal pour faire le plein de Vitamine C).",
-        "collation": "Bol de fromage blanc 3% avec du miel et des graines de chia."
-      };
-    } else if (jour == "Mercredi" || jour == "Samedi") {
-      return {
-        "plat": isPriseDeMasse
-            ? "Wrap complet au thon, œufs durs écrasés, tomates, maïs et filet d'huile d'olive."
-            : "Salade de lentilles vertes, pavé de cabillaud, tomates cerises et olives vertes.",
-        "dessert": "Pomme coupée en morceaux avec un carré de chocolat noir 85%.",
-        "collation": "Smoothie maison : Lait d'amande, beurre de cacahuète et flocons d'avoine."
-      };
-    } else {
-      return {
-        "plat": "Riz cantonais revisité (Riz, petits pois, dés de jambon, œufs brouillés) et salade verte.",
-        "dessert": "Un bol de fraises ou de baies rouges (Antioxydants puissants).",
-        "collation": "Une poignée de noix de Grenoble et un thé vert."
-      };
+      // 2. Logique des clients (IA)
+      for (int i = _clients.length - 1; i >= 0; i--) {
+        Client c = _clients[i];
+        
+        if (c.waitTime > 0) {
+          c.waitTime -= dt;
+          if (c.waitTime <= 0) {
+            // Fin de l'attente, passer à l'état suivant
+            _advanceClientState(c);
+          }
+          continue; // Ne bouge pas pendant l'attente
+        }
+
+        // Mouvement vers la cible
+        final direction = c.target - c.position;
+        final distance = direction.distance;
+        
+        if (distance > 5.0) {
+          // Vitesse du client : 100px/s
+          c.position += (direction / distance) * 100 * dt;
+        } else {
+          // Cible atteinte
+          _handleClientArrival(c);
+        }
+      }
+      
+      // Retirer les clients qui sont partis
+      _clients.removeWhere((c) => c.state == ClientState.walkingOut && (c.position - c.target).distance <= 5.0);
+    });
+  }
+
+  void _spawnClient() {
+    final spawnPos = Offset(_parkingBounds.left + 50, 300 + _random.nextDouble() * 100 - 50);
+    Client newClient = Client(
+      position: spawnPos,
+      color: Colors.primaries[_random.nextInt(Colors.primaries.length)],
+    );
+    newClient.target = Offset(_doorPosition.center.dx, _doorPosition.center.dy);
+    _clients.add(newClient);
+  }
+
+  void _handleClientArrival(Client c) {
+    if (c.state == ClientState.walkingToClub) {
+      // Arrivé à la porte, va au bar ou sur la piste
+      if (_random.nextBool() && _drinksStock > 0) {
+        c.state = ClientState.atBar;
+        c.target = Offset(_barBounds.left + _random.nextDouble() * _barBounds.width,
+                          _barBounds.top + _random.nextDouble() * _barBounds.height);
+      } else {
+        c.state = ClientState.dancing;
+        c.target = Offset(_dancefloorBounds.left + _random.nextDouble() * _dancefloorBounds.width,
+                          _dancefloorBounds.top + _random.nextDouble() * _dancefloorBounds.height);
+      }
+    } else if (c.state == ClientState.atBar) {
+      if (_drinksStock > 0) {
+        _drinksStock--;
+        _money += 15.0 * _barLevel; // Gain au bar
+        c.waitTime = 3.0 + _random.nextDouble() * 2; // Boit pendant 3-5s
+      } else {
+        // Plus de stock, part directement
+        c.state = ClientState.walkingOut;
+        c.target = Offset(_parkingBounds.left, 300);
+      }
+    } else if (c.state == ClientState.dancing) {
+      _money += 5.0 * _dancefloorLevel; // Gain sur la piste
+      c.waitTime = 5.0 + _random.nextDouble() * 5; // Danse pendant 5-10s
     }
   }
 
-  void _showCalendarSheet() {
-    final List<String> jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-    String timing = poids > 80 ? "Après le sport (Fenêtre Anabolique)" : "Avant le sport (Glucides complexes)";
+  void _advanceClientState(Client c) {
+    if (c.state == ClientState.atBar) {
+      // Après le bar, va danser ou part
+      if (_random.nextBool()) {
+        c.state = ClientState.dancing;
+        c.target = Offset(_dancefloorBounds.left + _random.nextDouble() * _dancefloorBounds.width,
+                          _dancefloorBounds.top + _random.nextDouble() * _dancefloorBounds.height);
+      } else {
+        c.state = ClientState.walkingOut;
+        c.target = Offset(_parkingBounds.left, 300);
+      }
+    } else if (c.state == ClientState.dancing) {
+      // Après la danse, part
+      c.state = ClientState.walkingOut;
+      c.target = Offset(_parkingBounds.left, 300);
+    }
+  }
 
+  // --- INTERFACES UTILISATEUR (DIALOGS) ---
+
+  void _openManagementMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
-        padding: const EdgeInsets.all(25),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("ALIMENTATION SEMAINE", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: jours.length,
-                itemBuilder: (context, index) {
-                  String jour = jours[index];
-                  Map<String, String> nutritionJour = _getRepasPourJour(jour);
-                  
-                  return Container(
-                    width: 300,
-                    margin: const EdgeInsets.only(right: 15, bottom: 10),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(25), border: Border.all(color: Colors.white10)),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(jour, style: const TextStyle(color: Colors.amber, fontSize: 24, fontWeight: FontWeight.bold)),
-                          const Divider(color: Colors.white10, height: 25),
-                          
-                          Row(children: [
-                            Icon(Icons.fitness_center, color: Colors.white54, size: 16),
-                            const SizedBox(width: 8),
-                            const Text("SÉANCE DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
-                          ]),
-                          const SizedBox(height: 6),
-                          Text(jour == "Dimanche" ? "Repos complet" : "$focus Intensif", style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                          
-                          const SizedBox(height: 20),
-                          Row(children: [
-                            Icon(Icons.restaurant, color: Colors.white54, size: 16),
-                            const SizedBox(width: 8),
-                            const Text("PLAT PRINCIPAL", style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
-                          ]),
-                          const SizedBox(height: 6),
-                          Text(nutritionJour["plat"]!, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4)),
-                          
-                          const SizedBox(height: 20),
-                          Row(children: [
-                            Icon(Icons.apple, color: Colors.white54, size: 16),
-                            const SizedBox(width: 8),
-                            const Text("DESSERT VITAMINÉ", style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
-                          ]),
-                          const SizedBox(height: 6),
-                          Text(nutritionJour["dessert"]!, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4)),
-                          
-                          const SizedBox(height: 20),
-                          Row(children: [
-                            Icon(Icons.cookie, color: Colors.white54, size: 16),
-                            const SizedBox(width: 8),
-                            const Text("COLLATION DU JOUR", style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
-                          ]),
-                          const SizedBox(height: 6),
-                          Text(nutritionJour["collation"]!, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4)),
-
-                          const SizedBox(height: 20),
-                          Row(children: [
-                            Icon(Icons.access_time, color: Colors.white54, size: 16),
-                            const SizedBox(width: 8),
-                            const Text("TIMING REPAS", style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
-                          ]),
-                          const SizedBox(height: 6),
-                          Text(timing, style: const TextStyle(color: Colors.amber, fontSize: 14)),
-                        ],
-                      ),
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return DefaultTabController(
+              length: 3,
+              child: Column(
+                children: [
+                  const TabBar(
+                    indicatorColor: Colors.purpleAccent,
+                    tabs: [
+                      Tab(icon: Icon(Icons.upgrade), text: "Améliorer"),
+                      Tab(icon: Icon(Icons.local_shipping), text: "Stocks"),
+                      Tab(icon: Icon(Icons.directions_car), text: "Concession"),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        // TAB 1: Améliorations
+                        ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            _buildUpgradeTile(
+                              "Agrandir la boîte", "Capacité max +5", 
+                              500.0 * (_clubCapacity / 5), 
+                              () => setState(() { _clubCapacity += 5; setModalState((){}); })
+                            ),
+                            _buildUpgradeTile(
+                              "Améliorer le Bar", "Boissons + chères", 
+                              300.0 * _barLevel, 
+                              () => setState(() { _barLevel++; setModalState((){}); })
+                            ),
+                            _buildUpgradeTile(
+                              "Sono & Lumières", "Gains piste +", 
+                              400.0 * _dancefloorLevel, 
+                              () => setState(() { _dancefloorLevel++; setModalState((){}); })
+                            ),
+                            if (!_hasVIP)
+                              _buildUpgradeTile(
+                                "Espace VIP", "Débloque la zone VIP", 
+                                5000.0, 
+                                () => setState(() { _hasVIP = true; setModalState((){}); })
+                              ),
+                          ],
+                        ),
+                        // TAB 2: Stocks
+                        ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            ListTile(
+                              title: const Text("Stock Actuel", style: TextStyle(color: Colors.white)),
+                              trailing: Text("$_drinksStock btls", style: const TextStyle(color: Colors.purpleAccent, fontSize: 18, fontWeight: FontWeight.bold)),
+                            ),
+                            const Divider(),
+                            _buildUpgradeTile("Commander 50 Bouteilles", "Livraison immédiate", 100.0, 
+                              () => setState(() { _drinksStock += 50; setModalState((){}); })
+                            ),
+                            _buildUpgradeTile("Commander 200 Bouteilles", "Livraison immédiate", 350.0, 
+                              () => setState(() { _drinksStock += 200; setModalState((){}); })
+                            ),
+                          ],
+                        ),
+                        // TAB 3: Voitures
+                        ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: _carCatalog.map((car) {
+                            bool isOwned = _ownedCars.contains(car);
+                            return ListTile(
+                              leading: Icon(car.icon, color: car.color, size: 40),
+                              title: Text(car.name, style: const TextStyle(color: Colors.white)),
+                              subtitle: Text(isOwned ? "Possédée" : "${car.price.toStringAsFixed(0)} \$", style: TextStyle(color: isOwned ? Colors.green : Colors.grey)),
+                              trailing: isOwned ? null : ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+                                onPressed: _money >= car.price ? () {
+                                  setState(() {
+                                    _money -= car.price;
+                                    _ownedCars.add(car);
+                                    setModalState((){});
+                                  });
+                                } : null,
+                                child: const Text("Acheter"),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          }
+        );
+      },
+    );
+  }
+
+  Widget _buildUpgradeTile(String title, String subtitle, double cost, VoidCallback onBuy) {
+    bool canAfford = _money >= cost;
+    return ListTile(
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
+      trailing: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: canAfford ? Colors.green : Colors.grey[700],
         ),
+        onPressed: canAfford ? () {
+          setState(() {
+            _money -= cost;
+          });
+          onBuy();
+        } : null,
+        child: Text("${cost.toStringAsFixed(0)} \$"),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(backgroundColor: Colors.black, body: Column(children: [
-      Padding(padding: const EdgeInsets.all(25), child: Row(children: [
-        if (etape > 0 && !showResults) IconButton(onPressed: () => setState(() => etape--), icon: const Icon(Icons.arrow_back_ios, color: Colors.white)),
-        ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset('assets/app_icon.png', width: 40, height: 40)),
-        const SizedBox(width: 15),
-        const Text("VIP FIT", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-        const Spacer(),
-        IconButton(icon: const Icon(Icons.help_outline, color: Colors.amber, size: 30), onPressed: _showHelpDialog)
-      ])),
-      Expanded(child: showResults ? _buildResults() : _buildStepper()),
-    ]));
-  }
-
-  Widget _buildStepper() {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 25), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _getStepContent(),
-      const Spacer(),
-      SizedBox(width: double.infinity, height: 60, child: ElevatedButton(
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-        onPressed: () => setState(() => etape < 7 ? etape++ : showResults = true),
-        child: Text(etape == 7 ? "VOIR MON PLAN" : "CONTINUER", style: const TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold)),
-      )),
-      const SizedBox(height: 30)
-    ]));
-  }
-
-  Widget _buildResults() {
-    String timing = poids > 80 ? "Après le sport (Insuline)" : "Avant le sport (Énergie)";
-    Map<String, String> nutritionAujourdhui = _getRepasPourJour("Lundi");
-    
-    return ListView(padding: const EdgeInsets.all(25), children: [
-      const Text("VOTRE PLAN", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 25),
-
-      GestureDetector(
-        onTap: _showCalendarSheet,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-          decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(20)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+  void _openWardrobe() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Garde-robe", style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.calendar_month, color: Colors.black, size: 24),
-              const SizedBox(width: 12),
-              const Text("CALENDRIER DES REPAS", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              const Text("Haut", style: TextStyle(color: Colors.white)),
+              Wrap(
+                children: Colors.primaries.map((c) => GestureDetector(
+                  onTap: () { setState(() { _playerShirtColor = c; }); Navigator.pop(context); },
+                  child: Container(margin: const EdgeInsets.all(4), width: 30, height: 30, color: c),
+                )).toList(),
+              ),
+              const SizedBox(height: 20),
+              const Text("Bas", style: TextStyle(color: Colors.white)),
+              Wrap(
+                children: Colors.primaries.map((c) => GestureDetector(
+                  onTap: () { setState(() { _playerPantsColor = c; }); Navigator.pop(context); },
+                  child: Container(margin: const EdgeInsets.all(4), width: 30, height: 30, color: c),
+                )).toList(),
+              ),
             ],
           ),
-        ),
-      ),
-      const SizedBox(height: 20),
+        );
+      }
+    );
+  }
 
-      _sectionIntuitive("A FAIRE", Icons.water_drop, [
-        _infoBouton("Eau en plus a boire :", "${((poids * 0.035) - eauActuelle).clamp(0, 5).toStringAsFixed(1)} L"),
-        _infoBouton("Noix ou cacahuètes non salés :", "${(poids * 0.4).toInt()} g"),
-      ]),
+  // --- RENDU VISUEL ---
 
-      _sectionIntuitive("REPAS SAIN", Icons.restaurant_menu, [
-        _infoTextBloque("Plat sain & complet", nutritionAujourdhui["plat"]!),
-        _infoTextBloque("Fruits & Énergie (Dessert)", nutritionAujourdhui["dessert"]!),
-        _infoBouton("Timing idéal :", timing),
-      ]),
-      
-      _sectionIntuitive("PLAN SPORTIF ($focus)", Icons.fitness_center, [
-        _infoBouton("Repos requis :", ossature == "Fine" ? "3 minutes" : "2 minutes"),
-        _infoBouton("Exercice clé :", "Farmer Walk"),
-      ]),
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final centerOffset = Offset(screenSize.width / 2, screenSize.height / 2);
+    
+    // Le monde entier est décalé pour centrer la caméra sur le joueur
+    final cameraTransform = Matrix4.translationValues(
+      centerOffset.dx - _playerPosition.dx,
+      centerOffset.dy - _playerPosition.dy,
+      0.0,
+    );
 
-      _sectionIntuitive("MATÉRIEL MAISON", Icons.gavel, [
-        GestureDetector(
-          onTap: _launchEquipment,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 5),
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(color: Colors.amber.withOpacity(0.05), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.amber.withOpacity(0.3), width: 1)),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Moteur de rendu du monde (Caméra)
+          Transform(
+            transform: cameraTransform,
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                const Text("Équipement a la maison", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                Icon(Icons.open_in_new, color: Colors.amber, size: 18),
+                // Sol extérieur (Parking)
+                Positioned.fromRect(
+                  rect: _parkingBounds,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[800],
+                      border: Border.all(color: Colors.white24, width: 2),
+                    ),
+                    child: const Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text("PARKING", style: TextStyle(color: Colors.white54, fontSize: 24, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Sol intérieur (Club)
+                Positioned.fromRect(
+                  rect: _clubBounds,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      border: Border.all(color: Colors.deepPurple, width: 4),
+                    ),
+                  ),
+                ),
+
+                // Entrée (Porte)
+                Positioned.fromRect(
+                  rect: _doorPosition,
+                  child: Container(color: Colors.purple.withOpacity(0.5)),
+                ),
+
+                // Piste de danse
+                Positioned.fromRect(
+                  rect: _dancefloorBounds,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.purple.withOpacity(0.8),
+                          Colors.blue.withOpacity(0.2),
+                        ],
+                        radius: 0.8 + (sin(DateTime.now().millisecondsSinceEpoch / 200) * 0.1), // Effet de pulsation
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(child: Text("DANCEFLOOR", style: TextStyle(color: Colors.white30, letterSpacing: 5))),
+                  ),
+                ),
+
+                // Le Bar
+                Positioned.fromRect(
+                  rect: _barBounds,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.brown[700],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.amber, width: 2),
+                    ),
+                    child: const Center(child: Icon(Icons.local_bar, color: Colors.amber, size: 50)),
+                  ),
+                ),
+
+                // Espace VIP (Si acheté)
+                if (_hasVIP)
+                  Positioned(
+                    left: 20, top: 20, width: 150, height: 150,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.2),
+                        border: Border.all(color: Colors.amber, width: 3),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const Center(child: Text("VIP", style: TextStyle(color: Colors.amber, fontSize: 24, fontWeight: FontWeight.bold))),
+                    ),
+                  ),
+
+                // Rendu des Voitures possédées (Parking)
+                ..._ownedCars.map((car) => Positioned(
+                  left: car.parkingSpot.dx,
+                  top: car.parkingSpot.dy,
+                  child: Transform.rotate(
+                    angle: pi / 2, // Garées face à l'entrée
+                    child: Icon(car.icon, color: car.color, size: 80),
+                  ),
+                )),
+
+                // Rendu des Clients (Sprites)
+                ..._clients.map((c) => Positioned(
+                  left: c.position.dx - 15,
+                  top: c.position.dy - 15,
+                  child: Column(
+                    children: [
+                      Icon(Icons.person, color: c.color, size: 30),
+                      if (c.state == ClientState.dancing)
+                        const Text("🎵", style: TextStyle(fontSize: 12)),
+                      if (c.state == ClientState.atBar)
+                        const Text("🍹", style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                )),
+
+                // Rendu du Joueur
+                Positioned(
+                  left: _playerPosition.dx - 20,
+                  top: _playerPosition.dy - 20,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _playerShirtColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: _playerPantsColor, blurRadius: 10, spreadRadius: 2)
+                      ]
+                    ),
+                    child: const Icon(Icons.face, color: Colors.black, size: 30),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-      ]),
-      
-      const SizedBox(height: 25),
-      Center(child: TextButton(onPressed: () => setState(() {showResults = false; etape = 7;}), child: const Text("Modifier mes infos", style: TextStyle(color: Colors.white30, fontSize: 16))))
-    ]);
+
+          // --- OVERLAY UI (HUD) ---
+          
+          // Infos (Argent & Stocks)
+          Positioned(
+            top: 40, left: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.purpleAccent),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.attach_money, color: Colors.green),
+                  Text(_money.toStringAsFixed(0), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 20),
+                  const Icon(Icons.local_drink, color: Colors.blue),
+                  Text("$_drinksStock", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
+
+          // Boutons d'action (Droite)
+          Positioned(
+            top: 40, right: 20,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  heroTag: "btn_manage",
+                  backgroundColor: Colors.deepPurple,
+                  onPressed: _openManagementMenu,
+                  child: const Icon(Icons.businessCenter, color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton(
+                  heroTag: "btn_wardrobe",
+                  backgroundColor: Colors.pinkAccent,
+                  onPressed: _openWardrobe,
+                  child: const Icon(Icons.checkroom, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+
+          // Joystick Virtuel (Bas Gauche)
+          Positioned(
+            bottom: 40, left: 40,
+            child: GestureDetector(
+              onPanStart: (details) {
+                // Initialisation
+              },
+              onPanUpdate: (details) {
+                setState(() {
+                  // Limiter le mouvement à un rayon max
+                  final delta = details.localPosition - const Offset(50, 50); // Centre du joystick
+                  if (delta.distance > 5) {
+                    _joystickDelta = delta / delta.distance;
+                  }
+                });
+              },
+              onPanEnd: (details) {
+                setState(() {
+                  _joystickDelta = Offset.zero;
+                });
+              },
+              child: Container(
+                width: 100, height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white30, width: 2),
+                ),
+                child: Center(
+                  child: Transform.translate(
+                    offset: _joystickDelta * 30, // Mouvement visuel du "knob"
+                    child: Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
-
-  Widget _sectionIntuitive(String title, IconData icon, List<Widget> children) => Container(
-    margin: const EdgeInsets.only(bottom: 15),
-    child: ExpansionTile(
-      leading: Icon(icon, color: Colors.white, size: 22),
-      title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5)),
-      backgroundColor: const Color(0xFF1C1C1E),
-      collapsedBackgroundColor: const Color(0xFF1C1C1E),
-      iconColor: Colors.white,
-      collapsedIconColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      childrenPadding: const EdgeInsets.only(left: 15, right: 15, bottom: 15, top: 5),
-      children: children,
-    ),
-  );
-
-  Widget _infoBouton(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 15))),
-        Text(value, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12)),
-      ],
-    ),
-  );
-
-  Widget _infoTextBloque(String title, String text) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(text, style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.3)),
-      ],
-    ),
-  );
-
-  Widget _getStepContent() {
-    final steps = [
-      _field("Ton sexe ?", _chips(["Homme", "Femme"], sexe, (v) => setState(() => sexe = v))),
-      _field("Quel est ton age ?", _ctrl(age, (v) => setState(() => age = v))),
-      _field("Combien tu pèse ?", _ctrl(poids, (v) => setState(() => poids = v))),
-      _field("Quel Taille tu fait ?", _ctrl(taille, (v) => setState(() => taille = v))),
-      _field("Tu dort combien d'heures ?", _ctrl(reveil, (v) => setState(() => reveil = v))),
-      _field("Combien de litre d'eau tu bois par jour (environ) ?", _ctrl(eauActuelle, (v) => setState(() => eauActuelle = v))),
-      _field("Tu as des os plutôt fins ou épais ?", _chips(["Fine", "Normale"], ossature, (v) => setState(() => ossature = v))),
-      _field("Quel est ton objectif ?", _chips(["Bras", "Jambes", "Dos"], focus, (v) => setState(() => focus = v))),
-    ];
-    return steps[etape];
-  }
-
-  Widget _field(String label, Widget child) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text(label, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)), 
-    const SizedBox(height: 25), 
-    child
-  ]);
-
-  Widget _ctrl(int v, Function(int) f) => Row(children: [
-    IconButton(onPressed: () => f(v-1), icon: const Icon(Icons.remove_circle, color: Colors.amber, size: 45)), 
-    Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text("$v", style: const TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold))), 
-    IconButton(onPressed: () => f(v+1), icon: const Icon(Icons.add_circle, color: Colors.amber, size: 45))
-  ]);
-
-  Widget _chips(List<String> items, String current, Function(String) f) => Wrap(spacing: 12, runSpacing: 12, children: items.map((e) => ChoiceChip(
-    label: Text(e, style: TextStyle(fontSize: 16, color: current == e ? Colors.black : Colors.white)),
-    selected: current == e, onSelected: (_) => f(e), selectedColor: Colors.amber, backgroundColor: const Color(0xFF1C1C1E),
-  )).toList());
 }
+
