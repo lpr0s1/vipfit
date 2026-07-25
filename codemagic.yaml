@@ -24,9 +24,9 @@ workflows:
             dart run flutter_launcher_icons || true
           fi
           
-      - name: 4. HACK RADICAL : Destruction de la sécurité Xcode
+      - name: 4. AL : xcode
         script: |
-          echo "-> Injection du script de contournement dans le Podfile..."
+          echo "-> Injection du script dans le Podfile..."
           
           # 1. Suppression de l'ancien système de build Flutter dans le Podfile
           sed -i '' '/post_install do |installer|/,/^end/d' ios/Podfile
