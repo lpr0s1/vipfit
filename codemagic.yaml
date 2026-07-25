@@ -15,33 +15,61 @@ workflows:
           else
             echo "Dossier iOS déjà présent."
           fi
+          
       - name: 2. Télécharger les dépendances
         script: |
           flutter pub get
+          
       - name: 3. Générer automatiquement l'icône de l'application
         script: |
           if [ -f "assets/app_icon.png" ]; then
             dart run flutter_launcher_icons
           fi
+          
       - name: 4. Compiler la version iOS (Sans signature)
         script: |
           echo "Compilation en cours... (Mode sans signature Apple)"
+          # Ces variables forcent Xcode à désactiver complètement toute tentative de signature
+          export CODE_SIGNING_ALLOWED="NO"
+          export CODE_SIGNING_REQUIRED="NO"
+          export CODE_SIGN_IDENTITY=""
+          
           flutter build ios --release --no-codesign
+          
       - name: 5. Créer le fichier .ipa
         script: |
-          echo "Empaquetage du Payload..."
+          echo "Recherche du fichier Runner.app..."
+          # Cherche dynamiquement le dossier généré par Flutter (évite les erreurs de chemin introuvable)
+          APP_PATH=$(find build/ios -name "Runner.app" -type d | head -n 1)
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ Erreur : Runner.app introuvable. La compilation a probablement échoué."
+            exit 1
+          fi
+          
+          echo "✅ Runner.app trouvé à l'emplacement : $APP_PATH"
+          
+          # Préparation des dossiers
           mkdir -p build/ios/ipa
-          cd build/ios/iphoneos
           mkdir -p Payload
-          mv Runner.app Payload/
-          zip -r -q ../ipa/idle_nightclub.ipa Payload
+          
+          # Copie et compression
+          echo "Empaquetage du Payload..."
+          cp -R "$APP_PATH" Payload/
+          zip -r -q build/ios/ipa/idle_nightclub.ipa Payload
+          
+          # Nettoyage
+          rm -rf Payload
+          echo "✅ Fichier IPA généré avec succès !"
+          
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - test@example.com # Codemagic remplacera par votre email de compte
+          - test@example.com # Remplace par ton email
         notify:
           success: true
           failure: true
+
 
