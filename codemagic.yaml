@@ -43,11 +43,11 @@ workflows:
           APP_PATH=$(find build/ios -name "Runner.app" -type d | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "❌ Erreur : Runner.app introuvable. La compilation a probablement échoué."
+            echo "Erreur : Runner.app introuvable. La compilation a probablement échoué."
             exit 1
           fi
           
-          echo "✅ Runner.app trouvé à l'emplacement : $APP_PATH"
+          echo "Runner.app trouvé à l'emplacement : $APP_PATH"
           
           # Préparation des dossiers
           mkdir -p build/ios/ipa
@@ -60,14 +60,14 @@ workflows:
           
           # Nettoyage
           rm -rf Payload
-          echo "✅ Fichier IPA généré avec succès !"
+          echo "Fichier IPA généré avec succès !"
           
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:
-          - test@example.com # Remplace par ton email
+          - blackberko400@gmail.com # Remplace par ton email
         notify:
           success: true
           failure: true
